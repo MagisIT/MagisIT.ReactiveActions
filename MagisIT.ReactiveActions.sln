@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MagisIT.ReactiveActions", "MagisIT.ReactiveActions\MagisIT.ReactiveActions.csproj", "{15AB02BD-6B5C-473D-9842-AD39DF550E30}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MagisIT.ReactiveActions.Sample", "MagisIT.ReactiveActions.Sample\MagisIT.ReactiveActions.Sample.csproj", "{7A9C1CB2-29EE-4AB7-B472-E6EAEC21E054}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MagisIT.ReactiveActions.Tests", "MagisIT.ReactiveActions.Tests\MagisIT.ReactiveActions.Tests.csproj", "{9D80EFC5-94D0-46DD-9427-2CDA8DC5B8B1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{2E7EAAD5-953D-41C8-BB33-6137B142ADF0}"
+ProjectSection(SolutionItems) = preProject
+	.gitignore = .gitignore
+	.editorconfig = .editorconfig
+EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{15AB02BD-6B5C-473D-9842-AD39DF550E30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15AB02BD-6B5C-473D-9842-AD39DF550E30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15AB02BD-6B5C-473D-9842-AD39DF550E30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15AB02BD-6B5C-473D-9842-AD39DF550E30}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A9C1CB2-29EE-4AB7-B472-E6EAEC21E054}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A9C1CB2-29EE-4AB7-B472-E6EAEC21E054}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A9C1CB2-29EE-4AB7-B472-E6EAEC21E054}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A9C1CB2-29EE-4AB7-B472-E6EAEC21E054}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D80EFC5-94D0-46DD-9427-2CDA8DC5B8B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D80EFC5-94D0-46DD-9427-2CDA8DC5B8B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D80EFC5-94D0-46DD-9427-2CDA8DC5B8B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D80EFC5-94D0-46DD-9427-2CDA8DC5B8B1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
