@@ -8,7 +8,7 @@ namespace MagisIT.ReactiveActions.Reactivity
     {
         public ActionExecutor ActionExecutor { get; }
 
-        public ModelFilterWithParams DataQuery { get; private set; }
+        public ParameterizedModelFilter DataQuery { get; private set; }
 
         private readonly ExecutionContext _parentContext = null;
         private readonly IList<ExecutionContext> _subContexts = new List<ExecutionContext>();
@@ -35,7 +35,7 @@ namespace MagisIT.ReactiveActions.Reactivity
             if (!modelFilter.AcceptsParameters(filterParams))
                 throw new ArgumentException("The model filter doesn't accept the specified filter parameters.");
 
-            DataQuery = new ModelFilterWithParams(modelFilter, filterParams);
+            DataQuery = new ParameterizedModelFilter(modelFilter, filterParams);
         }
 
         internal ExecutionContext CreateSubContext()
