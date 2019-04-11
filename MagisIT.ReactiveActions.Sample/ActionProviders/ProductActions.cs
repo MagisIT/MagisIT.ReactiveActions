@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,15 +13,20 @@ namespace MagisIT.ReactiveActions.Sample.ActionProviders
     public class ProductActions : ActionProviderBase
     {
         [Action]
-        public Task<List<Product>> GetProductsAsync(IDataSource dataSource)
+        [ReactiveCollection]
+        public Task<ICollection<Product>> GetProductsAsync(IDataSource dataSource)
         {
-            return Task.FromResult(dataSource.Products);
+            var products = TrackCollectionQuery(dataSource.Products, nameof(ModelFilters.GetProductsFilter));
+            return Task.FromResult(products);
         }
 
         [Action]
-        public Task<Product> GetProductAsync(IDataSource dataSource, GetProductActionDescriptor actionDescriptor)
+        [Reactive]
+        public async Task<Product> GetProductAsync(IDataSource dataSource, GetProductActionDescriptor actionDescriptor)
         {
-            return Task.FromResult(dataSource.Products.FirstOrDefault(p => p.Id == actionDescriptor.Id));
+            var test = await InvokeActionAsync<ICollection<Product>>(nameof(GetProductsAsync)).ConfigureAwait(false);
+
+            return TrackEntityQuery(dataSource.Products.FirstOrDefault(p => p.Id == actionDescriptor.Id), nameof(ModelFilters.GetProductByIdFilter), actionDescriptor.Id);
         }
     }
 }

@@ -7,12 +7,10 @@ namespace MagisIT.ReactiveActions.ActionCreation
 {
     public class ReflectionActionBuilder : IActionBuilder
     {
-        public ActionDelegate BuildActionDelegate(IServiceProvider serviceProvider, ActionExecutor actionExecutor, Type actionProviderType, MethodInfo actionMethod)
+        public ActionDelegate BuildActionDelegate(IServiceProvider serviceProvider, Type actionProviderType, MethodInfo actionMethod)
         {
             if (serviceProvider == null)
                 throw new ArgumentNullException(nameof(serviceProvider));
-            if (actionExecutor == null)
-                throw new ArgumentNullException(nameof(actionExecutor));
             if (actionProviderType == null)
                 throw new ArgumentNullException(nameof(actionProviderType));
             if (actionMethod == null)
@@ -22,7 +20,10 @@ namespace MagisIT.ReactiveActions.ActionCreation
             ParameterInfo[] methodParameters = actionMethod.GetParameters();
 
             // Return a custom lambda function which abstracts the action execution away
-            return actionDescriptor => {
+            return (executionContext, actionDescriptor) => {
+                if (executionContext == null)
+                    throw new ArgumentNullException(nameof(executionContext));
+
                 // Analyse required method parameters
                 var paramValues = new List<object>();
                 bool actionDescriptionUsed = false;
@@ -65,7 +66,7 @@ namespace MagisIT.ReactiveActions.ActionCreation
 
                 // Create action provider instance
                 object actionProvider = Activator.CreateInstance(actionProviderType);
-                actionProviderType.GetProperty(nameof(IActionProvider.ActionExecutor))?.SetValue(actionProvider, actionExecutor);
+                actionProviderType.GetProperty(nameof(IActionProvider.ExecutionContext))?.SetValue(actionProvider, executionContext);
 
                 // Execute method on the new instance
                 return (Task)actionMethod.Invoke(actionProvider, paramValues.ToArray());

@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 
 namespace MagisIT.ReactiveActions
 {
-    public delegate Task ActionDelegate(IActionDescriptor actionDescriptor = null);
-
     public class ActionBroker
     {
         private readonly ActionExecutor _actionExecutor;

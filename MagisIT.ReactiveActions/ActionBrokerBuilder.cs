@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using MagisIT.ReactiveActions.ActionCreation;
 using MagisIT.ReactiveActions.Attributes;
+using MagisIT.ReactiveActions.Reactivity;
+using MagisIT.ReactiveActions.Reactivity.UpdateHandling;
 
 namespace MagisIT.ReactiveActions
 {
@@ -12,7 +16,11 @@ namespace MagisIT.ReactiveActions
         private readonly IServiceProvider _serviceProvider;
         private readonly IActionBuilder _actionBuilder;
 
-        internal ActionExecutor ActionExecutor { get; } = new ActionExecutor();
+        private readonly IDictionary<string, ActionDelegate> _actions = new Dictionary<string, ActionDelegate>();
+        private readonly IDictionary<string, ModelFilter> _modelFilters = new Dictionary<string, ModelFilter>();
+        private readonly IList<IActionResultUpdateHandler> _actionResultUpdateHandlers = new List<IActionResultUpdateHandler>();
+
+        private bool _built = false;
 
         public ActionBrokerBuilder(IServiceProvider serviceProvider, IActionBuilder actionBuilder)
         {
@@ -22,12 +30,13 @@ namespace MagisIT.ReactiveActions
 
         public ActionBrokerBuilder(IServiceProvider serviceProvider) : this(serviceProvider, new ReflectionActionBuilder()) { }
 
-        public void AddAction<TActionProvider>(string actionMethodName) where TActionProvider : IActionProvider, new()
+        public ActionBrokerBuilder AddAction<TActionProvider>(string actionMethodName) where TActionProvider : IActionProvider, new()
         {
             if (actionMethodName == null)
                 throw new ArgumentNullException(nameof(actionMethodName));
-            if (ActionExecutor.Actions.ContainsKey(actionMethodName))
+            if (_actions.ContainsKey(actionMethodName))
                 throw new ArgumentException($"An action method with the same name is already registered: {actionMethodName}", nameof(actionMethodName));
+            AssertNotBuilt();
 
             Type actionProviderType = typeof(TActionProvider);
 
@@ -45,15 +54,131 @@ namespace MagisIT.ReactiveActions
                 throw new ArgumentException("Action method has no Action attribute", nameof(actionMethodName));
 
             // Construct action delegate
-            ActionDelegate actionDelegate = _actionBuilder.BuildActionDelegate(_serviceProvider, ActionExecutor, actionProviderType, actionMethod);
+            ActionDelegate actionDelegate = _actionBuilder.BuildActionDelegate(_serviceProvider, actionProviderType, actionMethod);
 
             // Register action
-            ActionExecutor.Actions.Add(actionMethodName, actionDelegate);
+            _actions.Add(actionMethodName, actionDelegate);
+
+            return this;
+        }
+
+        public ActionBrokerBuilder AddModelFilter<TModel>(Func<TModel, bool> filterDelegate)
+        {
+            InternalAddModelFilter<TModel>(filterDelegate);
+            return this;
+        }
+
+        public ActionBrokerBuilder AddModelFilter<TModel, T1>(Func<TModel, T1, bool> filterDelegate)
+        {
+            InternalAddModelFilter<TModel>(filterDelegate);
+            return this;
+        }
+
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2>(Func<TModel, T1, T2, bool> filterDelegate)
+        {
+            InternalAddModelFilter<TModel>(filterDelegate);
+            return this;
+        }
+
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3>(Func<TModel, T1, T2, T3, bool> filterDelegate)
+        {
+            InternalAddModelFilter<TModel>(filterDelegate);
+            return this;
+        }
+
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4>(Func<TModel, T1, T2, T3, T4, bool> filterDelegate)
+        {
+            InternalAddModelFilter<TModel>(filterDelegate);
+            return this;
+        }
+
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5>(Func<TModel, T1, T2, T3, T4, T5, bool> filterDelegate)
+        {
+            InternalAddModelFilter<TModel>(filterDelegate);
+            return this;
+        }
+
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5, T6>(Func<TModel, T1, T2, T3, T4, T5, T6, bool> filterDelegate)
+        {
+            InternalAddModelFilter<TModel>(filterDelegate);
+            return this;
+        }
+
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5, T6, T7>(Func<TModel, T1, T2, T3, T4, T5, T6, T7, bool> filterDelegate)
+        {
+            InternalAddModelFilter<TModel>(filterDelegate);
+            return this;
+        }
+
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5, T6, T7, T8>(Func<TModel, T1, T2, T3, T4, T5, T6, T7, T8, bool> filterDelegate)
+        {
+            InternalAddModelFilter<TModel>(filterDelegate);
+            return this;
+        }
+
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5, T6, T7, T8, T9>(Func<TModel, T1, T2, T3, T4, T5, T6, T7, T8, T9, bool> filterDelegate)
+        {
+            InternalAddModelFilter<TModel>(filterDelegate);
+            return this;
+        }
+
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Func<TModel, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, bool> filterDelegate)
+        {
+            InternalAddModelFilter<TModel>(filterDelegate);
+            return this;
+        }
+
+        public ActionBrokerBuilder AddActionResultUpdateHandler(IActionResultUpdateHandler updateHandler)
+        {
+            AssertNotBuilt();
+
+            if (updateHandler == null)
+                throw new ArgumentNullException(nameof(updateHandler));
+
+            // Register handler
+            _actionResultUpdateHandlers.Add(updateHandler);
+
+            return this;
         }
 
         public ActionBroker Build()
         {
-            return new ActionBroker(ActionExecutor);
+            AssertNotBuilt();
+
+            var actionExecutor = new ActionExecutor((IReadOnlyDictionary<string, ActionDelegate>)_actions,
+                                                    (IReadOnlyDictionary<string, ModelFilter>)_modelFilters,
+                                                    (IReadOnlyCollection<IActionResultUpdateHandler>)_actionResultUpdateHandlers);
+            var actionBroker = new ActionBroker(actionExecutor);
+
+            _built = true;
+            return actionBroker;
+        }
+
+        private void InternalAddModelFilter<TModel>(Delegate filterDelegate)
+        {
+            if (filterDelegate == null)
+                throw new ArgumentNullException(nameof(filterDelegate));
+            AssertNotBuilt();
+
+            // Check if the method is anoymous (e.g. a lambda) and therefore the naming will be unexpected
+            MethodInfo methodInfo = filterDelegate.Method;
+            if (methodInfo.GetCustomAttribute<CompilerGeneratedAttribute>(false) != null)
+                throw new ArgumentException("The filter delegate must not be an anonymous method", nameof(filterDelegate));
+
+            // Check if this filter is already registered
+            string filterName = methodInfo.Name;
+            if (_actions.ContainsKey(filterName))
+                throw new ArgumentException($"A model filter with the same name is already registered: {filterName}", nameof(filterDelegate));
+
+            // Register filter
+            var filter = new ModelFilter(typeof(TModel), filterName, filterDelegate);
+            _modelFilters.Add(filterName, filter);
+        }
+
+        private void AssertNotBuilt()
+        {
+            if (_built)
+                throw new InvalidOperationException("Builder methods are unavailable after the ActionBroker has been built.");
         }
     }
 }

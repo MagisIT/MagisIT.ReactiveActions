@@ -5,6 +5,6 @@ namespace MagisIT.ReactiveActions.ActionCreation
 {
     public interface IActionBuilder
     {
-        ActionDelegate BuildActionDelegate(IServiceProvider serviceProvider, ActionExecutor actionExecutor, Type actionProviderType, MethodInfo actionMethod);
+        ActionDelegate BuildActionDelegate(IServiceProvider serviceProvider, Type actionProviderType, MethodInfo actionMethod);
     }
 }
