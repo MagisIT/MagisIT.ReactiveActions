@@ -8,13 +8,13 @@ namespace MagisIT.ReactiveActions
 {
     public class ActionExecutor
     {
-        private readonly IReadOnlyDictionary<string, ActionDelegate> _actions;
+        private readonly IReadOnlyDictionary<string, Action> _actions;
 
         private readonly IReadOnlyDictionary<string, ModelFilter> _modelFilters;
 
         private readonly IReadOnlyCollection<IActionResultUpdateHandler> _actionResultUpdateHandlers;
 
-        internal ActionExecutor(IReadOnlyDictionary<string, ActionDelegate> actions,
+        internal ActionExecutor(IReadOnlyDictionary<string, Action> actions,
                                 IReadOnlyDictionary<string, ModelFilter> modelFilters,
                                 IReadOnlyCollection<IActionResultUpdateHandler> actionResultUpdateHandlers)
         {
@@ -23,16 +23,18 @@ namespace MagisIT.ReactiveActions
             _actionResultUpdateHandlers = actionResultUpdateHandlers ?? throw new ArgumentNullException(nameof(actionResultUpdateHandlers));
         }
 
-        public Task InvokeActionAsync(string name, IActionDescriptor actionDescriptor = null) => InternalInvokeActionAsync(name, actionDescriptor);
+        public Task InvokeActionAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool registerTracker = true) =>
+            InternalInvokeRootActionAsync(trackingSession, name, actionDescriptor, registerTracker);
 
-        public Task<TResult> InvokeActionAsync<TResult>(string name, IActionDescriptor actionDescriptor = null) => (Task<TResult>)InternalInvokeActionAsync(name, actionDescriptor);
+        public Task<TResult> InvokeActionAsync<TResult>(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool registerTracker = true) =>
+            (Task<TResult>)InternalInvokeRootActionAsync(trackingSession, name, actionDescriptor);
 
         public Task InvokeSubActionAsync(ExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
         {
             if (currentExecutionContext == null)
                 throw new ArgumentNullException(nameof(currentExecutionContext));
 
-            return InternalInvokeActionAsync(name, actionDescriptor, currentExecutionContext);
+            return InternalInvokeSubActionAsync(currentExecutionContext, name, actionDescriptor);
         }
 
         public Task<TResult> InvokeSubActionAsync<TResult>(ExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
@@ -40,7 +42,7 @@ namespace MagisIT.ReactiveActions
             if (currentExecutionContext == null)
                 throw new ArgumentNullException(nameof(currentExecutionContext));
 
-            return (Task<TResult>)InternalInvokeActionAsync(name, actionDescriptor, currentExecutionContext);
+            return (Task<TResult>)InternalInvokeSubActionAsync(currentExecutionContext, name, actionDescriptor);
         }
 
         public ModelFilter GetModelFilter(string name)
@@ -66,24 +68,38 @@ namespace MagisIT.ReactiveActions
             return modelFilter;
         }
 
-        private Task InternalInvokeActionAsync(string name, IActionDescriptor actionDescriptor = null, ExecutionContext currentExecutionContext = null)
+        private Task InternalInvokeRootActionAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool registerTracker = true)
         {
+            if (trackingSession == null)
+                throw new ArgumentNullException(nameof(trackingSession));
+            if (string.IsNullOrWhiteSpace(trackingSession))
+                throw new ArgumentException("Value cannot be null or whitespace.", nameof(trackingSession));
+            if (name == null)
+                throw new ArgumentNullException(nameof(name));
+            if (!_actions.ContainsKey(name))
+                throw new ArgumentException($"Action {name} not found.", nameof(name));
+
+            // Create root level of the execution tree
+            Action action = _actions[name];
+            ExecutionContext executionContext = ExecutionContext.CreateRootContext(trackingSession, registerTracker, this, action);
+
+            return action.ExecuteAsync(executionContext, actionDescriptor);
+        }
+
+        private Task InternalInvokeSubActionAsync(ExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
+        {
+            if (currentExecutionContext == null)
+                throw new ArgumentNullException(nameof(currentExecutionContext));
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
             if (!_actions.ContainsKey(name))
                 throw new ArgumentException($"Action {name} not found.", nameof(name));
 
             // The context for the following execution
-            ExecutionContext nextExecutionContext;
+            Action action = _actions[name];
+            ExecutionContext nextExecutionContext = currentExecutionContext.CreateSubContext(action);
 
-            // Is this the root level of the action execution tree?
-            if (currentExecutionContext == null)
-                nextExecutionContext = ExecutionContext.CreateRootContext(this);
-            else
-                nextExecutionContext = currentExecutionContext.CreateSubContext();
-
-            ActionDelegate actionDelegate = _actions[name];
-            return actionDelegate.Invoke(nextExecutionContext, actionDescriptor);
+            return action.ExecuteAsync(nextExecutionContext, actionDescriptor);
         }
     }
 }

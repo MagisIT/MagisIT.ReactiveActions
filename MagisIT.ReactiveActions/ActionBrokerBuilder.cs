@@ -16,7 +16,7 @@ namespace MagisIT.ReactiveActions
         private readonly IServiceProvider _serviceProvider;
         private readonly IActionBuilder _actionBuilder;
 
-        private readonly IDictionary<string, ActionDelegate> _actions = new Dictionary<string, ActionDelegate>();
+        private readonly IDictionary<string, Action> _actions = new Dictionary<string, Action>();
         private readonly IDictionary<string, ModelFilter> _modelFilters = new Dictionary<string, ModelFilter>();
         private readonly IList<IActionResultUpdateHandler> _actionResultUpdateHandlers = new List<IActionResultUpdateHandler>();
 
@@ -53,11 +53,11 @@ namespace MagisIT.ReactiveActions
             if (actionAttribute == null)
                 throw new ArgumentException("Action method has no Action attribute", nameof(actionMethodName));
 
-            // Construct action delegate
-            ActionDelegate actionDelegate = _actionBuilder.BuildActionDelegate(_serviceProvider, actionProviderType, actionMethod);
+            // Construct action
+            Action action = _actionBuilder.BuildAction(_serviceProvider, actionProviderType, actionMethod, actionMethodName);
 
             // Register action
-            _actions.Add(actionMethodName, actionDelegate);
+            _actions.Add(actionMethodName, action);
 
             return this;
         }
@@ -145,7 +145,7 @@ namespace MagisIT.ReactiveActions
         {
             AssertNotBuilt();
 
-            var actionExecutor = new ActionExecutor((IReadOnlyDictionary<string, ActionDelegate>)_actions,
+            var actionExecutor = new ActionExecutor((IReadOnlyDictionary<string, Action>)_actions,
                                                     (IReadOnlyDictionary<string, ModelFilter>)_modelFilters,
                                                     (IReadOnlyCollection<IActionResultUpdateHandler>)_actionResultUpdateHandlers);
             var actionBroker = new ActionBroker(actionExecutor);

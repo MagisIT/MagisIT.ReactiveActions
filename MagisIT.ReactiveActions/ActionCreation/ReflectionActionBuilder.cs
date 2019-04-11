@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
+using MagisIT.ReactiveActions.Attributes;
 
 namespace MagisIT.ReactiveActions.ActionCreation
 {
     public class ReflectionActionBuilder : IActionBuilder
     {
-        public ActionDelegate BuildActionDelegate(IServiceProvider serviceProvider, Type actionProviderType, MethodInfo actionMethod)
+        public Action BuildAction(IServiceProvider serviceProvider, Type actionProviderType, MethodInfo actionMethod, string actionName)
         {
             if (serviceProvider == null)
                 throw new ArgumentNullException(nameof(serviceProvider));
@@ -16,10 +17,27 @@ namespace MagisIT.ReactiveActions.ActionCreation
             if (actionMethod == null)
                 throw new ArgumentNullException(nameof(actionMethod));
 
+            // Search for reactivity attribute
+            var reactivityAttribute = actionMethod.GetCustomAttribute<ReactiveAttribute>();
+
+            // Detect action type
+            ActionType actionType = ActionType.Default;
+            if (reactivityAttribute is ReactiveCollectionAttribute)
+                actionType = ActionType.ReactiveCollection;
+            else if (reactivityAttribute != null)
+                actionType = ActionType.Reactive;
+
             // Query method parameters
             ParameterInfo[] methodParameters = actionMethod.GetParameters();
 
-            // Return a custom lambda function which abstracts the action execution away
+            // Build a custom lambda function which abstracts the action execution away
+            ActionDelegate actionDelegate = BuildActionDelegate(serviceProvider, actionProviderType, actionMethod, methodParameters);
+
+            return new Action(actionName, actionDelegate, actionType);
+        }
+
+        private ActionDelegate BuildActionDelegate(IServiceProvider serviceProvider, Type actionProviderType, MethodInfo actionMethod, ParameterInfo[] methodParameters)
+        {
             return (executionContext, actionDescriptor) => {
                 if (executionContext == null)
                     throw new ArgumentNullException(nameof(executionContext));

@@ -17,7 +17,9 @@ namespace MagisIT.ReactiveActions.Sample
 
         public async Task RunAsync()
         {
-            var product = await _actionBroker.InvokeActionAsync<Product>(nameof(ProductActions.GetProductAsync), new GetProductActionDescriptor("milk")).ConfigureAwait(false);
+            string session = "Session1";
+            var product = await _actionBroker.InvokeActionAsync<Product>(session, nameof(ProductActions.GetProductAsync), new GetProductActionDescriptor("milk"))
+                                             .ConfigureAwait(false);
         }
     }
 }
