@@ -1,4 +1,7 @@
 namespace MagisIT.ReactiveActions
 {
-    public interface IActionDescriptor { }
+    public interface IActionDescriptor
+    {
+        string CombinedIdentifier { get; }
+    }
 }

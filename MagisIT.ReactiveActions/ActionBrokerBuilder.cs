@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -163,7 +164,11 @@ namespace MagisIT.ReactiveActions
             // Check if the method is anoymous (e.g. a lambda) and therefore the naming will be unexpected
             MethodInfo methodInfo = filterDelegate.Method;
             if (methodInfo.GetCustomAttribute<CompilerGeneratedAttribute>(false) != null)
-                throw new ArgumentException("The filter delegate must not be an anonymous method", nameof(filterDelegate));
+                throw new ArgumentException("The filter delegate must not be an anonymous method.", nameof(filterDelegate));
+
+            // Ensure all parameters are simply serializable
+            if (methodInfo.GetParameters().Skip(1).Any(p => !p.ParameterType.IsPrimitive && p.ParameterType != typeof(string)))
+                throw new ArgumentException("The filter parameters must be primitive types or strings.", nameof(filterDelegate));
 
             // Check if this filter is already registered
             string filterName = methodInfo.Name;

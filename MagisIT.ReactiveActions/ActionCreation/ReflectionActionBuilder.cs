@@ -38,7 +38,9 @@ namespace MagisIT.ReactiveActions.ActionCreation
 
         private ActionDelegate BuildActionDelegate(IServiceProvider serviceProvider, Type actionProviderType, MethodInfo actionMethod, ParameterInfo[] methodParameters)
         {
-            return (executionContext, actionDescriptor) => {
+            // TODO: Add further runtime optimizations
+
+            return async (executionContext, actionDescriptor) => {
                 if (executionContext == null)
                     throw new ArgumentNullException(nameof(executionContext));
 
@@ -87,7 +89,13 @@ namespace MagisIT.ReactiveActions.ActionCreation
                 actionProviderType.GetProperty(nameof(IActionProvider.ExecutionContext))?.SetValue(actionProvider, executionContext);
 
                 // Execute method on the new instance
-                return (Task)actionMethod.Invoke(actionProvider, paramValues.ToArray());
+                Task task = (Task)actionMethod.Invoke(actionProvider, paramValues.ToArray());
+                await task.ConfigureAwait(false);
+
+                // Return result
+                if (actionMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+                    return actionMethod.ReturnType.GetProperty(nameof(Task<object>.Result))?.GetValue(task);
+                return null;
             };
         }
     }

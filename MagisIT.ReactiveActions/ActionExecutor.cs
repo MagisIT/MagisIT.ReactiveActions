@@ -23,13 +23,15 @@ namespace MagisIT.ReactiveActions
             _actionResultUpdateHandlers = actionResultUpdateHandlers ?? throw new ArgumentNullException(nameof(actionResultUpdateHandlers));
         }
 
-        public Task InvokeActionAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool registerTracker = true) =>
+        public Task<object> InvokeActionAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool registerTracker = true) =>
             InternalInvokeRootActionAsync(trackingSession, name, actionDescriptor, registerTracker);
 
-        public Task<TResult> InvokeActionAsync<TResult>(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool registerTracker = true) =>
-            (Task<TResult>)InternalInvokeRootActionAsync(trackingSession, name, actionDescriptor);
+        public async Task<TResult> InvokeActionAsync<TResult>(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool registerTracker = true)
+        {
+            return (TResult)await InternalInvokeRootActionAsync(trackingSession, name, actionDescriptor).ConfigureAwait(false);
+        }
 
-        public Task InvokeSubActionAsync(ExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
+        public Task<object> InvokeSubActionAsync(ExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
         {
             if (currentExecutionContext == null)
                 throw new ArgumentNullException(nameof(currentExecutionContext));
@@ -37,12 +39,12 @@ namespace MagisIT.ReactiveActions
             return InternalInvokeSubActionAsync(currentExecutionContext, name, actionDescriptor);
         }
 
-        public Task<TResult> InvokeSubActionAsync<TResult>(ExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
+        public async Task<TResult> InvokeSubActionAsync<TResult>(ExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
         {
             if (currentExecutionContext == null)
                 throw new ArgumentNullException(nameof(currentExecutionContext));
 
-            return (Task<TResult>)InternalInvokeSubActionAsync(currentExecutionContext, name, actionDescriptor);
+            return (TResult)await InternalInvokeSubActionAsync(currentExecutionContext, name, actionDescriptor).ConfigureAwait(false);
         }
 
         public ModelFilter GetModelFilter(string name)
@@ -68,7 +70,7 @@ namespace MagisIT.ReactiveActions
             return modelFilter;
         }
 
-        private Task InternalInvokeRootActionAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool registerTracker = true)
+        private async Task<object> InternalInvokeRootActionAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool registerTracker = true)
         {
             if (trackingSession == null)
                 throw new ArgumentNullException(nameof(trackingSession));
@@ -83,10 +85,16 @@ namespace MagisIT.ReactiveActions
             Action action = _actions[name];
             ExecutionContext executionContext = ExecutionContext.CreateRootContext(trackingSession, registerTracker, this, action);
 
-            return action.ExecuteAsync(executionContext, actionDescriptor);
+
+            object result = await action.ExecuteAsync(executionContext, actionDescriptor).ConfigureAwait(false);
+
+            // Register tracker
+            if (registerTracker) { }
+
+            return result;
         }
 
-        private Task InternalInvokeSubActionAsync(ExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
+        private Task<object> InternalInvokeSubActionAsync(ExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
         {
             if (currentExecutionContext == null)
                 throw new ArgumentNullException(nameof(currentExecutionContext));

@@ -13,13 +13,13 @@ namespace MagisIT.ReactiveActions
             _actionExecutor = actionExecutor ?? throw new ArgumentNullException(nameof(actionExecutor));
         }
 
-        public Task InvokeActionAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null) =>
+        public Task<object> InvokeActionAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null) =>
             _actionExecutor.InvokeActionAsync(trackingSession, name, actionDescriptor);
 
         public Task<TResult> InvokeActionAsync<TResult>(string trackingSession, string name, IActionDescriptor actionDescriptor = null) =>
             _actionExecutor.InvokeActionAsync<TResult>(trackingSession, name, actionDescriptor);
 
-        public Task InvokeActionWithoutTrackingAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null) =>
+        public Task<object> InvokeActionWithoutTrackingAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null) =>
             _actionExecutor.InvokeActionAsync(trackingSession, name, actionDescriptor,false);
 
         public Task<TResult> InvokeActionWithoutTrackingAsync<TResult>(string trackingSession, string name, IActionDescriptor actionDescriptor = null) =>

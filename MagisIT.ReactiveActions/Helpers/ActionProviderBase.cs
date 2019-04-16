@@ -11,7 +11,7 @@ namespace MagisIT.ReactiveActions.Helpers
     {
         public ExecutionContext ExecutionContext { get; set; }
 
-        protected Task InvokeActionAsync(string name, IActionDescriptor actionDescriptor = null)
+        protected Task<object> InvokeActionAsync(string name, IActionDescriptor actionDescriptor = null)
         {
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
@@ -24,7 +24,7 @@ namespace MagisIT.ReactiveActions.Helpers
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
 
-            return (Task<TResult>)ExecutionContext.ActionExecutor.InvokeSubActionAsync(ExecutionContext, name, actionDescriptor);
+            return ExecutionContext.ActionExecutor.InvokeSubActionAsync<TResult>(ExecutionContext, name, actionDescriptor);
         }
 
         protected void TrackDataQuery<TModel>(string modelFilterName, params object[] filterParams)

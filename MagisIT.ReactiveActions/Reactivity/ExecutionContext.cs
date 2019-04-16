@@ -44,6 +44,9 @@ namespace MagisIT.ReactiveActions.Reactivity
             if (filterParams == null)
                 throw new ArgumentNullException(nameof(filterParams));
 
+            if (!TrackingEnabled)
+                return;
+
             if (!Action.IsReactive)
                 throw new InvalidOperationException("Action methods that are not marked as reactive cannot register data queries.");
             if (DataQuery != null)

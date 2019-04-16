@@ -34,6 +34,8 @@ namespace MagisIT.ReactiveActions.Reactivity
             return ModelType.IsAssignableFrom(type);
         }
 
+        public bool CanFilterModelType<TModel>() => CanFilterModelType(typeof(TModel));
+
         public bool AcceptsParameters(object[] filterParams)
         {
             if (filterParams == null)
@@ -64,6 +66,8 @@ namespace MagisIT.ReactiveActions.Reactivity
                 throw new ArgumentNullException(nameof(filterParams));
             if (!CanFilterModelType(typeof(TModel)))
                 throw new ArgumentException("Model type is incompatible to this model filter.", nameof(TModel));
+
+            // TODO: Replace with expression tree built in the constructor.
 
             object[] parameters = filterParams.Prepend(entity).ToArray();
             return (bool)FilterDelegate.DynamicInvoke(parameters);
