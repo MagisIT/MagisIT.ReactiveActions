@@ -15,10 +15,9 @@ namespace MagisIT.ReactiveActions.Reactivity
 
         public Action Action { get; }
 
-        public ParameterizedModelFilter DataQuery { get; private set; }
+        public IList<ExecutionContext> SubContexts { get; } = new List<ExecutionContext>();
 
-        private readonly ExecutionContext _parentContext = null;
-        private readonly IList<ExecutionContext> _subContexts = new List<ExecutionContext>();
+        public IList<ParameterizedModelFilter> DataQueries { get; } = new List<ParameterizedModelFilter>();
 
         private ExecutionContext(string trackingSession, bool trackingEnabled, ActionExecutor actionExecutor, Action action)
         {
@@ -33,7 +32,6 @@ namespace MagisIT.ReactiveActions.Reactivity
             TrackingSession = parentContext.TrackingSession;
             TrackingEnabled = parentContext.TrackingEnabled;
             ActionExecutor = parentContext.ActionExecutor;
-            _parentContext = parentContext;
             Action = action;
         }
 
@@ -49,12 +47,10 @@ namespace MagisIT.ReactiveActions.Reactivity
 
             if (!Action.IsReactive)
                 throw new InvalidOperationException("Action methods that are not marked as reactive cannot register data queries.");
-            if (DataQuery != null)
-                throw new InvalidOperationException("An action can only register one data query. Please split your action method into multiple actions.");
             if (!modelFilter.AcceptsParameters(filterParams))
                 throw new ArgumentException("The model filter doesn't accept the specified filter parameters.");
 
-            DataQuery = new ParameterizedModelFilter(modelFilter, filterParams);
+            DataQueries.Add(new ParameterizedModelFilter(modelFilter, filterParams));
         }
 
         internal ExecutionContext CreateSubContext(Action action)
@@ -63,7 +59,7 @@ namespace MagisIT.ReactiveActions.Reactivity
                 throw new ArgumentNullException(nameof(action));
 
             var subContext = new ExecutionContext(this, action);
-            _subContexts.Add(subContext);
+            SubContexts.Add(subContext);
             return subContext;
         }
 

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using MagisIT.ReactiveActions.ActionCreation;
 using MagisIT.ReactiveActions.Attributes;
 using MagisIT.ReactiveActions.Reactivity;
+using MagisIT.ReactiveActions.Reactivity.Persistence;
 using MagisIT.ReactiveActions.Reactivity.UpdateHandling;
 
 namespace MagisIT.ReactiveActions
@@ -16,6 +17,7 @@ namespace MagisIT.ReactiveActions
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IActionBuilder _actionBuilder;
+        private readonly ITrackingSessionStore _trackingSessionStore;
 
         private readonly IDictionary<string, Action> _actions = new Dictionary<string, Action>();
         private readonly IDictionary<string, ModelFilter> _modelFilters = new Dictionary<string, ModelFilter>();
@@ -23,13 +25,17 @@ namespace MagisIT.ReactiveActions
 
         private bool _built = false;
 
-        public ActionBrokerBuilder(IServiceProvider serviceProvider, IActionBuilder actionBuilder)
+        public ActionBrokerBuilder(IServiceProvider serviceProvider, IActionBuilder actionBuilder, ITrackingSessionStore trackingSessionStore)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _actionBuilder = actionBuilder ?? throw new ArgumentNullException(nameof(actionBuilder));
+            _trackingSessionStore = trackingSessionStore ?? throw new ArgumentNullException(nameof(trackingSessionStore));
         }
 
-        public ActionBrokerBuilder(IServiceProvider serviceProvider) : this(serviceProvider, new ReflectionActionBuilder()) { }
+        public ActionBrokerBuilder(IServiceProvider serviceProvider, ITrackingSessionStore trackingSessionStore) : this(
+            serviceProvider,
+            new ReflectionActionBuilder(),
+            trackingSessionStore) { }
 
         public ActionBrokerBuilder AddAction<TActionProvider>(string actionMethodName) where TActionProvider : IActionProvider, new()
         {
@@ -148,7 +154,8 @@ namespace MagisIT.ReactiveActions
 
             var actionExecutor = new ActionExecutor((IReadOnlyDictionary<string, Action>)_actions,
                                                     (IReadOnlyDictionary<string, ModelFilter>)_modelFilters,
-                                                    (IReadOnlyCollection<IActionResultUpdateHandler>)_actionResultUpdateHandlers);
+                                                    (IReadOnlyCollection<IActionResultUpdateHandler>)_actionResultUpdateHandlers,
+                                                    _trackingSessionStore);
             var actionBroker = new ActionBroker(actionExecutor);
 
             _built = true;

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using MagisIT.ReactiveActions.Sample.ActionProviders;
 using MagisIT.ReactiveActions.Sample.DataSource;
 using MagisIT.ReactiveActions.Sample.Models;
+using MagisIT.ReactiveActions.TrackingSessionStore.InMemory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MagisIT.ReactiveActions.Sample
@@ -26,7 +27,7 @@ namespace MagisIT.ReactiveActions.Sample
 
         private static ActionBroker BuildActionBroker(IServiceProvider serviceProvider)
         {
-            var builder = new ActionBrokerBuilder(serviceProvider);
+            var builder = new ActionBrokerBuilder(serviceProvider, new InMemoryStore());
 
             builder.AddAction<ProductActions>(nameof(ProductActions.GetProductsAsync));
             builder.AddAction<ProductActions>(nameof(ProductActions.GetProductAsync));

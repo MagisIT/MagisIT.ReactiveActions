@@ -51,6 +51,7 @@ namespace MagisIT.ReactiveActions.Helpers
             // Get filter
             ModelFilter modelFilter = ExecutionContext.ActionExecutor.GetModelFilter<TModel>(modelFilterName);
 
+            // TODO: DEBUG doesn't tell, if the user application but the library is in debug mode
             // Test if the filter matches the result while in debug mode.
             // The queryResult can be null, if the query returned no result. In that case no check is possible.
 #if DEBUG

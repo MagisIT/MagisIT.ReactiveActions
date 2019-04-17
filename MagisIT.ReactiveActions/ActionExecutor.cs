@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using MagisIT.ReactiveActions.Reactivity;
+using MagisIT.ReactiveActions.Reactivity.Persistence;
+using MagisIT.ReactiveActions.Reactivity.Persistence.Models;
 using MagisIT.ReactiveActions.Reactivity.UpdateHandling;
 
 namespace MagisIT.ReactiveActions
@@ -14,21 +17,25 @@ namespace MagisIT.ReactiveActions
 
         private readonly IReadOnlyCollection<IActionResultUpdateHandler> _actionResultUpdateHandlers;
 
+        private readonly ITrackingSessionStore _trackingSessionStore;
+
         internal ActionExecutor(IReadOnlyDictionary<string, Action> actions,
                                 IReadOnlyDictionary<string, ModelFilter> modelFilters,
-                                IReadOnlyCollection<IActionResultUpdateHandler> actionResultUpdateHandlers)
+                                IReadOnlyCollection<IActionResultUpdateHandler> actionResultUpdateHandlers,
+                                ITrackingSessionStore trackingSessionStore)
         {
             _actions = actions ?? throw new ArgumentNullException(nameof(actions));
             _modelFilters = modelFilters ?? throw new ArgumentNullException(nameof(modelFilters));
             _actionResultUpdateHandlers = actionResultUpdateHandlers ?? throw new ArgumentNullException(nameof(actionResultUpdateHandlers));
+            _trackingSessionStore = trackingSessionStore ?? throw new ArgumentNullException(nameof(trackingSessionStore));
         }
 
-        public Task<object> InvokeActionAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool registerTracker = true) =>
-            InternalInvokeRootActionAsync(trackingSession, name, actionDescriptor, registerTracker);
+        public Task<object> InvokeActionAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool trackingEnabled = true) =>
+            InternalInvokeRootActionAsync(trackingSession, name, actionDescriptor, trackingEnabled);
 
-        public async Task<TResult> InvokeActionAsync<TResult>(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool registerTracker = true)
+        public async Task<TResult> InvokeActionAsync<TResult>(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool trackingEnabled = true)
         {
-            return (TResult)await InternalInvokeRootActionAsync(trackingSession, name, actionDescriptor).ConfigureAwait(false);
+            return (TResult)await InternalInvokeRootActionAsync(trackingSession, name, actionDescriptor, trackingEnabled).ConfigureAwait(false);
         }
 
         public Task<object> InvokeSubActionAsync(ExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
@@ -70,7 +77,20 @@ namespace MagisIT.ReactiveActions
             return modelFilter;
         }
 
-        private async Task<object> InternalInvokeRootActionAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool registerTracker = true)
+        public async Task PublishModelUpdateAsync<TModel>(string trackingSession, TModel beforeUpdate, TModel afterUpdate) where TModel : class
+        {
+            if (trackingSession == null)
+                throw new ArgumentNullException(nameof(trackingSession));
+            if (beforeUpdate == null && afterUpdate == null)
+                throw new ArgumentNullException(nameof(afterUpdate));
+
+            // Get all previous data queries for entities of this model type
+            IEnumerable<DataQuery> dataQueriesForModel = await _trackingSessionStore.GetDataQueriesForModelAsync(trackingSession, typeof(TModel).Name).ConfigureAwait(false);
+
+            // TODO: check for created/updated/deleted and call update handler
+        }
+
+        private async Task<object> InternalInvokeRootActionAsync(string trackingSession, string name, IActionDescriptor actionDescriptor = null, bool trackingEnabled = true)
         {
             if (trackingSession == null)
                 throw new ArgumentNullException(nameof(trackingSession));
@@ -83,13 +103,13 @@ namespace MagisIT.ReactiveActions
 
             // Create root level of the execution tree
             Action action = _actions[name];
-            ExecutionContext executionContext = ExecutionContext.CreateRootContext(trackingSession, registerTracker, this, action);
-
+            ExecutionContext executionContext = ExecutionContext.CreateRootContext(trackingSession, trackingEnabled, this, action);
 
             object result = await action.ExecuteAsync(executionContext, actionDescriptor).ConfigureAwait(false);
 
-            // Register tracker
-            if (registerTracker) { }
+            // Store tracked data queries of action call
+            if (trackingEnabled)
+                await StoreExecutionAsync(executionContext, actionDescriptor).ConfigureAwait(false);
 
             return result;
         }
@@ -108,6 +128,52 @@ namespace MagisIT.ReactiveActions
             ExecutionContext nextExecutionContext = currentExecutionContext.CreateSubContext(action);
 
             return action.ExecuteAsync(nextExecutionContext, actionDescriptor);
+        }
+
+        private Task StoreExecutionAsync(ExecutionContext rootContext, IActionDescriptor actionDescriptor)
+        {
+            string trackingSession = rootContext.TrackingSession;
+            string actionName = rootContext.Action.Name;
+            string actionDescriptorTypeName = actionDescriptor.GetType().Name;
+
+            var actionCall = new ActionCall {
+                TrackingSession = trackingSession,
+                Id = $"{actionName}:{actionDescriptorTypeName}:{actionDescriptor.CombinedIdentifier}",
+                ActionName = actionName,
+                ActionDescriptorTypeName = actionDescriptorTypeName,
+                ActionDescriptor = actionDescriptor
+            };
+            var dataQueries = new List<DataQuery>();
+
+            // Extract the data queries recursively from the execution contexts
+            void VisitExecutionContext(ExecutionContext context)
+            {
+                dataQueries.AddRange(context.DataQueries.Select(filter => new DataQuery {
+                    TrackingSession = trackingSession,
+                    Id = filter.Identifier,
+                    ModelTypeName = filter.ModelFilter.ModelType.Name,
+                    FilterName = filter.ModelFilter.Name,
+                    FilterParams = filter.FilterParams,
+                    AffectedActionCalls = new[] {
+                        new ActionCallReference {
+                            ActionCallId = actionCall.Id,
+                            Direct = context == rootContext
+                        }
+                    }
+                }));
+
+                foreach (ExecutionContext subContext in context.SubContexts)
+                    VisitExecutionContext(subContext);
+            }
+
+            VisitExecutionContext(rootContext);
+
+            // Merge data queries with similar ID
+            // If at least two data queries have the same ID. Favour the one that is direct.
+            DataQuery[] mergedDataQueries = dataQueries.GroupBy(dataQuery => dataQuery.Id)
+                                                       .Select(grouping => grouping.OrderBy(entry => entry.AffectedActionCalls.First().Direct ? 0 : 1).FirstOrDefault()).ToArray();
+
+            return _trackingSessionStore.StoreTrackedActionCallAsync(trackingSession, actionCall, mergedDataQueries);
         }
     }
 }
