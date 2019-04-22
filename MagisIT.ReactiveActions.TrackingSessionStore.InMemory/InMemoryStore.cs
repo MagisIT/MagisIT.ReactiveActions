@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -10,18 +11,12 @@ using MagisIT.ReactiveActions.Reactivity.Persistence.Models;
 
 namespace MagisIT.ReactiveActions.TrackingSessionStore.InMemory
 {
-    public class InMemoryStore : ITrackingSessionStore, IDisposable
+    public class InMemoryStore : ITrackingSessionStore
     {
-        private readonly SemaphoreSlim _storeSemaphore = new SemaphoreSlim(1, 1);
+        private readonly ConcurrentDictionary<string, TrackingSessionEntry> _trackingSessionEntries = new ConcurrentDictionary<string, TrackingSessionEntry>();
 
-        private readonly IDictionary<string, TrackingSessionEntry> _trackingSessionEntries = new Dictionary<string, TrackingSessionEntry>();
-
-        private bool _disposed;
-
-        public async Task StoreTrackedActionCallAsync(string trackingSession, ActionCall actionCall, ICollection<DataQuery> dataQueries)
+        public Task StoreTrackedActionCallAsync(string trackingSession, ActionCall actionCall, ICollection<DataQuery> dataQueries)
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(InMemoryStore));
             if (trackingSession == null)
                 throw new ArgumentNullException(nameof(trackingSession));
             if (actionCall == null)
@@ -29,139 +24,82 @@ namespace MagisIT.ReactiveActions.TrackingSessionStore.InMemory
             if (dataQueries == null)
                 throw new ArgumentNullException(nameof(dataQueries));
 
-            await _storeSemaphore.WaitAsync().ConfigureAwait(false);
-            try
-            {
-                // Get/Create session entry
-                TrackingSessionEntry sessionEntry;
-                if (_trackingSessionEntries.ContainsKey(trackingSession))
-                    sessionEntry = _trackingSessionEntries[trackingSession];
-                else
-                    _trackingSessionEntries.Add(trackingSession, sessionEntry = new TrackingSessionEntry(trackingSession));
+            // Get/Create session entry
+            TrackingSessionEntry sessionEntry = _trackingSessionEntries.GetOrAdd(trackingSession, session => new TrackingSessionEntry(session));
 
-                // Add action call
-                sessionEntry.AddActionCall(actionCall, dataQueries);
-            }
-            finally
-            {
-                _storeSemaphore.Release();
-            }
+            // Add action call
+            sessionEntry.AddActionCall(actionCall, dataQueries);
+
+            return Task.CompletedTask;
         }
 
-        public async Task<DataQuery> GetDataQueryAsync(string trackingSession, string id)
+        public Task<DataQuery> GetDataQueryAsync(string trackingSession, string id)
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(InMemoryStore));
             if (trackingSession == null)
                 throw new ArgumentNullException(nameof(trackingSession));
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
 
-            await _storeSemaphore.WaitAsync().ConfigureAwait(false);
-            try
-            {
-                return _trackingSessionEntries.ContainsKey(trackingSession) ? _trackingSessionEntries[trackingSession].GetDataQuery(id) : null;
-            }
-            finally
-            {
-                _storeSemaphore.Release();
-            }
+            return Task.FromResult(_trackingSessionEntries.TryGetValue(trackingSession, out TrackingSessionEntry sessionEntry) ? sessionEntry.GetDataQuery(id) : null);
         }
 
-        public async Task<IEnumerable<DataQuery>> GetDataQueriesForModelAsync(string trackingSession, string modelTypeName)
+        public Task<IEnumerable<DataQuery>> GetDataQueriesForModelAsync(string trackingSession, string modelTypeName)
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(InMemoryStore));
             if (trackingSession == null)
                 throw new ArgumentNullException(nameof(trackingSession));
             if (modelTypeName == null)
                 throw new ArgumentNullException(nameof(modelTypeName));
 
-            await _storeSemaphore.WaitAsync().ConfigureAwait(false);
-            try
-            {
-                return _trackingSessionEntries.ContainsKey(trackingSession)
-                    ? _trackingSessionEntries[trackingSession].GetDataQueriesForModel(modelTypeName)
-                    : Enumerable.Empty<DataQuery>();
-            }
-            finally
-            {
-                _storeSemaphore.Release();
-            }
+            return Task.FromResult(_trackingSessionEntries.TryGetValue(trackingSession, out TrackingSessionEntry sessionEntry)
+                                       ? sessionEntry.GetDataQueriesForModel(modelTypeName)
+                                       : null);
         }
 
-        public async Task<ActionCall> GetActionCallAsync(string trackingSession, string id)
+        public Task<IEnumerable<DataQuery>> GetGlobalDataQueriesForModelAsync(string modelTypeName)
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(InMemoryStore));
+            if (modelTypeName == null)
+                throw new ArgumentNullException(nameof(modelTypeName));
+
+            return Task.FromResult(_trackingSessionEntries.SelectMany(sessionPair => sessionPair.Value.GetDataQueriesForModel(modelTypeName)));
+        }
+
+        public Task<ActionCall> GetActionCallAsync(string trackingSession, string id)
+        {
             if (trackingSession == null)
                 throw new ArgumentNullException(nameof(trackingSession));
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
 
-            await _storeSemaphore.WaitAsync().ConfigureAwait(false);
-            try
-            {
-                return _trackingSessionEntries.ContainsKey(trackingSession) ? _trackingSessionEntries[trackingSession].GetActionCall(id) : null;
-            }
-            finally
-            {
-                _storeSemaphore.Release();
-            }
+            return Task.FromResult(_trackingSessionEntries.TryGetValue(trackingSession, out TrackingSessionEntry sessionEntry) ? sessionEntry.GetActionCall(id) : null);
         }
 
-        public async Task<IEnumerable<ActionCall>> GetActionCallsForActionAsync(string trackingSession, string actionName)
+        public Task<IEnumerable<ActionCall>> GetActionCallsForActionAsync(string trackingSession, string actionName)
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(InMemoryStore));
             if (trackingSession == null)
                 throw new ArgumentNullException(nameof(trackingSession));
             if (actionName == null)
                 throw new ArgumentNullException(nameof(actionName));
 
-            await _storeSemaphore.WaitAsync().ConfigureAwait(false);
-            try
-            {
-                return _trackingSessionEntries.ContainsKey(trackingSession)
-                    ? _trackingSessionEntries[trackingSession].GetActionCallsForAction(actionName)
-                    : Enumerable.Empty<ActionCall>();
-            }
-            finally
-            {
-                _storeSemaphore.Release();
-            }
+            return Task.FromResult(_trackingSessionEntries.TryGetValue(trackingSession, out TrackingSessionEntry sessionEntry)
+                                       ? sessionEntry.GetActionCallsForAction(actionName)
+                                       : null);
         }
 
-        public async Task UnregisterSessionAsync(string trackingSession)
+        public Task UnregisterSessionAsync(string trackingSession)
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(InMemoryStore));
             if (trackingSession == null)
                 throw new ArgumentNullException(nameof(trackingSession));
 
-            await _storeSemaphore.WaitAsync().ConfigureAwait(false);
-            try
-            {
-                _trackingSessionEntries.Remove(trackingSession);
-            }
-            finally
-            {
-                _storeSemaphore.Release();
-            }
-        }
-
-        public void Dispose()
-        {
-            _storeSemaphore?.Dispose();
-            _disposed = true;
+            _trackingSessionEntries.TryRemove(trackingSession, out TrackingSessionEntry _);
+            return Task.CompletedTask;
         }
 
         private class TrackingSessionEntry
         {
             public string Name { get; }
 
-            private readonly IDictionary<string, ActionCall> _actionCalls = new Dictionary<string, ActionCall>();
-            private readonly IDictionary<string, DataQuery> _dataQueries = new Dictionary<string, DataQuery>();
+            private readonly ConcurrentDictionary<string, ActionCall> _actionCalls = new ConcurrentDictionary<string, ActionCall>();
+            private readonly ConcurrentDictionary<string, DataQuery> _dataQueries = new ConcurrentDictionary<string, DataQuery>();
 
             public TrackingSessionEntry(string name)
             {
@@ -180,16 +118,15 @@ namespace MagisIT.ReactiveActions.TrackingSessionStore.InMemory
                 // Add/Merge data query references
                 foreach (DataQuery dataQuery in dataQueries)
                 {
-                    // Merge affected action calls with existing ones
-                    if (_dataQueries.ContainsKey(dataQuery.Id))
-                    {
-                        DataQuery existingDataQuery = _dataQueries[dataQuery.Id];
-                        existingDataQuery.AffectedActionCalls = existingDataQuery.AffectedActionCalls.Union(dataQuery.AffectedActionCalls).ToArray();
-                        continue;
-                    }
-
                     // Add data query
-                    _dataQueries.Add(dataQuery.Id, dataQuery);
+                    _dataQueries.AddOrUpdate(dataQuery.Id,
+                                             dataQuery,
+                                             (id, existingDataQuery) => {
+                                                 // Merge affected action calls with existing ones
+                                                 // This might be called multiple times when there was a threading conflict, so this call must not be destructive.
+                                                 existingDataQuery.AffectedActionCalls = existingDataQuery.AffectedActionCalls.Union(dataQuery.AffectedActionCalls).ToArray();
+                                                 return existingDataQuery;
+                                             });
                 }
             }
 

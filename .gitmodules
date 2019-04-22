@@ -1,0 +1,3 @@
+[submodule "MarcusW.SharpUtils"]
+	path = MarcusW.SharpUtils
+	url = https://github.com/MarcusWichelmann/MarcusW.SharpUtils.git

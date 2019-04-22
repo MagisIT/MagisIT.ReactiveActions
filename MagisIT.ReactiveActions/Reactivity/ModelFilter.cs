@@ -34,7 +34,7 @@ namespace MagisIT.ReactiveActions.Reactivity
             return ModelType.IsAssignableFrom(type);
         }
 
-        public bool CanFilterModelType<TModel>() => CanFilterModelType(typeof(TModel));
+        public bool CanFilterModelType<TModel>() where TModel : class => CanFilterModelType(typeof(TModel));
 
         public bool AcceptsParameters(object[] filterParams)
         {
@@ -58,7 +58,7 @@ namespace MagisIT.ReactiveActions.Reactivity
             return true;
         }
 
-        public bool Matches<TModel>(TModel entity, params object[] filterParams)
+        public bool Matches<TModel>(TModel entity, params object[] filterParams) where TModel : class
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));

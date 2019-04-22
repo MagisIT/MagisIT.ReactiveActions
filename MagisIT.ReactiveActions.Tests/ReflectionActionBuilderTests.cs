@@ -12,13 +12,13 @@ namespace MagisIT.ReactiveActions.Tests
 {
     public class ReflectionActionBuilderTests
     {
-        private readonly ReflectionActionBuilder _actionBuilder;
+        private readonly ReflectionActionDelegateBuilder _actionDelegateBuilder;
         private readonly ServiceProvider _serviceProvider;
         private readonly ActionExecutor _actionExecutor;
 
         public ReflectionActionBuilderTests()
         {
-            _actionBuilder = new ReflectionActionBuilder();
+            _actionDelegateBuilder = new ReflectionActionDelegateBuilder();
             _serviceProvider = new ServiceCollection().AddSingleton<SomeDependency>().BuildServiceProvider();
             _actionExecutor = new ActionExecutor();
         }
@@ -26,32 +26,32 @@ namespace MagisIT.ReactiveActions.Tests
         [Fact]
         public void ThrowsWhenServiceProviderNull()
         {
-            Assert.Throws<ArgumentNullException>(() => _actionBuilder.BuildActionDelegate(null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => _actionDelegateBuilder.BuildActionDelegate(null, null, null, null));
         }
 
         [Fact]
         public void ThrowsWhenActionExecutorNull()
         {
-            Assert.Throws<ArgumentNullException>(() => _actionBuilder.BuildActionDelegate(_serviceProvider, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, null, null, null));
         }
 
         [Fact]
         public void ThrowsWhenActionProviderTypeNull()
         {
-            Assert.Throws<ArgumentNullException>(() => _actionBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, null, null));
+            Assert.Throws<ArgumentNullException>(() => _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, null, null));
         }
 
         [Fact]
         public void ThrowsWhenActionMethodNull()
         {
-            Assert.Throws<ArgumentNullException>(() => _actionBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), null));
+            Assert.Throws<ArgumentNullException>(() => _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), null));
         }
 
         [Fact]
         public Task ThrowsWhenNoExecutionContextGiven()
         {
             MethodInfo actionMethod = typeof(TestActions).GetMethod(nameof(TestActions.SimpleActionAsync));
-            ActionDelegate actionDelegate = _actionBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
+            ActionDelegate actionDelegate = _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
             return Assert.ThrowsAsync<ArgumentNullException>(() => actionDelegate.Invoke(null));
         }
 
@@ -61,7 +61,7 @@ namespace MagisIT.ReactiveActions.Tests
         public Task DoesNotRequireActionDescriptorWhenNotRequired(string actionMethodName)
         {
             MethodInfo actionMethod = typeof(TestActions).GetMethod(actionMethodName);
-            ActionDelegate actionDelegate = _actionBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
+            ActionDelegate actionDelegate = _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
             return actionDelegate.Invoke(ExecutionContext.CreateRootContext());
         }
 
@@ -69,7 +69,7 @@ namespace MagisIT.ReactiveActions.Tests
         public Task ThrowsWhenNoActionDescriptorGiven()
         {
             MethodInfo actionMethod = typeof(TestActions).GetMethod(nameof(TestActions.ActionWithActionDescriptorAsync));
-            ActionDelegate actionDelegate = _actionBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
+            ActionDelegate actionDelegate = _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
             return Assert.ThrowsAsync<ArgumentNullException>(() => actionDelegate.Invoke(ExecutionContext.CreateRootContext()));
         }
 
@@ -79,7 +79,7 @@ namespace MagisIT.ReactiveActions.Tests
         public Task ThrowsWhenNoActionDescriptorRequired(string actionMethodName)
         {
             MethodInfo actionMethod = typeof(TestActions).GetMethod(actionMethodName);
-            ActionDelegate actionDelegate = _actionBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
+            ActionDelegate actionDelegate = _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
             return Assert.ThrowsAsync<ArgumentException>(() => actionDelegate.Invoke(ExecutionContext.CreateRootContext(), new SomeActionDescriptor()));
         }
 
@@ -87,7 +87,7 @@ namespace MagisIT.ReactiveActions.Tests
         public Task ThrowsWhenActionDescriptorHasWrongType()
         {
             MethodInfo actionMethod = typeof(TestActions).GetMethod(nameof(TestActions.ActionWithActionDescriptorAsync));
-            ActionDelegate actionDelegate = _actionBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
+            ActionDelegate actionDelegate = _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
             return Assert.ThrowsAsync<ArgumentException>(() => actionDelegate.Invoke(ExecutionContext.CreateRootContext(), new OtherActionDescriptor()));
         }
 
@@ -95,7 +95,7 @@ namespace MagisIT.ReactiveActions.Tests
         public Task ResolvesDependency()
         {
             MethodInfo actionMethod = typeof(TestActions).GetMethod(nameof(TestActions.ActionWithSomeDependencyAsync));
-            ActionDelegate actionDelegate = _actionBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
+            ActionDelegate actionDelegate = _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
             return actionDelegate.Invoke(ExecutionContext.CreateRootContext());
         }
 
@@ -103,7 +103,7 @@ namespace MagisIT.ReactiveActions.Tests
         public Task IgnoresOptionalDependencyThatCannotBeResolved()
         {
             MethodInfo actionMethod = typeof(TestActions).GetMethod(nameof(TestActions.ActionWithOptionalOtherDependencyAsync));
-            ActionDelegate actionDelegate = _actionBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
+            ActionDelegate actionDelegate = _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
             return actionDelegate.Invoke(ExecutionContext.CreateRootContext());
         }
 
@@ -111,7 +111,7 @@ namespace MagisIT.ReactiveActions.Tests
         public Task ThrowsWhenRequiredDependencyCannotBeResolved()
         {
             MethodInfo actionMethod = typeof(TestActions).GetMethod(nameof(TestActions.ActionWithOtherDependencyAsync));
-            ActionDelegate actionDelegate = _actionBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
+            ActionDelegate actionDelegate = _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, _actionExecutor, typeof(TestActions), actionMethod);
             return Assert.ThrowsAsync<InvalidOperationException>(() => actionDelegate.Invoke(ExecutionContext.CreateRootContext()));
         }
 

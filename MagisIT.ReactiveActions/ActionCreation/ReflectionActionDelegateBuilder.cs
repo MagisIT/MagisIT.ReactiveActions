@@ -6,9 +6,9 @@ using MagisIT.ReactiveActions.Attributes;
 
 namespace MagisIT.ReactiveActions.ActionCreation
 {
-    public class ReflectionActionBuilder : IActionBuilder
+    public class ReflectionActionDelegateBuilder : IActionDelegateBuilder
     {
-        public Action BuildAction(IServiceProvider serviceProvider, Type actionProviderType, MethodInfo actionMethod, string actionName)
+        public ActionDelegate BuildActionDelegate(IServiceProvider serviceProvider, Type actionProviderType, MethodInfo actionMethod)
         {
             if (serviceProvider == null)
                 throw new ArgumentNullException(nameof(serviceProvider));
@@ -17,29 +17,16 @@ namespace MagisIT.ReactiveActions.ActionCreation
             if (actionMethod == null)
                 throw new ArgumentNullException(nameof(actionMethod));
 
-            // Search for reactivity attribute
-            var reactivityAttribute = actionMethod.GetCustomAttribute<ReactiveAttribute>();
-
-            // Detect action type
-            ActionType actionType = ActionType.Default;
-            if (reactivityAttribute is ReactiveCollectionAttribute)
-                actionType = ActionType.ReactiveCollection;
-            else if (reactivityAttribute != null)
-                actionType = ActionType.Reactive;
-
             // Query method parameters
             ParameterInfo[] methodParameters = actionMethod.GetParameters();
 
             // Build a custom lambda function which abstracts the action execution away
-            ActionDelegate actionDelegate = BuildActionDelegate(serviceProvider, actionProviderType, actionMethod, methodParameters);
-
-            return new Action(actionName, actionDelegate, actionType);
+            return BuildActionDelegate(serviceProvider, actionProviderType, actionMethod, methodParameters);
         }
 
         private ActionDelegate BuildActionDelegate(IServiceProvider serviceProvider, Type actionProviderType, MethodInfo actionMethod, ParameterInfo[] methodParameters)
         {
             // TODO: Add further runtime optimizations
-
             return async (executionContext, actionDescriptor) => {
                 if (executionContext == null)
                     throw new ArgumentNullException(nameof(executionContext));
@@ -93,7 +80,7 @@ namespace MagisIT.ReactiveActions.ActionCreation
                 await task.ConfigureAwait(false);
 
                 // Return result
-                if (actionMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+                if (actionMethod.ReturnType.IsGenericType && actionMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
                     return actionMethod.ReturnType.GetProperty(nameof(Task<object>.Result))?.GetValue(task);
                 return null;
             };

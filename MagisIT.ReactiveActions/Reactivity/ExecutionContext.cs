@@ -2,37 +2,37 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace MagisIT.ReactiveActions.Reactivity
 {
     public class ExecutionContext
     {
-        public string TrackingSession { get; }
-
-        public bool TrackingEnabled { get; }
-
         public ActionExecutor ActionExecutor { get; }
 
         public Action Action { get; }
+
+
+        public string TrackingSession { get; }
+
+        public bool TrackingEnabled => TrackingSession != null;
 
         public IList<ExecutionContext> SubContexts { get; } = new List<ExecutionContext>();
 
         public IList<ParameterizedModelFilter> DataQueries { get; } = new List<ParameterizedModelFilter>();
 
-        private ExecutionContext(string trackingSession, bool trackingEnabled, ActionExecutor actionExecutor, Action action)
+        private ExecutionContext(ActionExecutor actionExecutor, Action action, string trackingSession = null)
         {
-            TrackingSession = trackingSession;
-            TrackingEnabled = trackingEnabled;
             ActionExecutor = actionExecutor;
             Action = action;
+            TrackingSession = trackingSession;
         }
 
         private ExecutionContext(ExecutionContext parentContext, Action action)
         {
-            TrackingSession = parentContext.TrackingSession;
-            TrackingEnabled = parentContext.TrackingEnabled;
             ActionExecutor = parentContext.ActionExecutor;
             Action = action;
+            TrackingSession = parentContext.TrackingSession;
         }
 
         public void RegisterDataQuery(ModelFilter modelFilter, object[] filterParams)
@@ -63,16 +63,14 @@ namespace MagisIT.ReactiveActions.Reactivity
             return subContext;
         }
 
-        internal static ExecutionContext CreateRootContext(string trackingSession, bool trackingEnabled, ActionExecutor actionExecutor, Action action)
+        internal static ExecutionContext CreateRootContext(ActionExecutor actionExecutor, Action action, string trackingSession = null)
         {
-            if (trackingSession == null)
-                throw new ArgumentNullException(nameof(trackingSession));
             if (actionExecutor == null)
                 throw new ArgumentNullException(nameof(actionExecutor));
             if (action == null)
                 throw new ArgumentNullException(nameof(action));
 
-            return new ExecutionContext(trackingSession, trackingEnabled, actionExecutor, action);
+            return new ExecutionContext(actionExecutor, action, trackingSession);
         }
     }
 }

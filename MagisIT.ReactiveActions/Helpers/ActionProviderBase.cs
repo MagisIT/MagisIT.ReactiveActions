@@ -27,7 +27,7 @@ namespace MagisIT.ReactiveActions.Helpers
             return ExecutionContext.ActionExecutor.InvokeSubActionAsync<TResult>(ExecutionContext, name, actionDescriptor);
         }
 
-        protected void TrackDataQuery<TModel>(string modelFilterName, params object[] filterParams)
+        protected void TrackDataQuery<TModel>(string modelFilterName, params object[] filterParams) where TModel : class
         {
             if (modelFilterName == null)
                 throw new ArgumentNullException(nameof(modelFilterName));
@@ -41,7 +41,7 @@ namespace MagisIT.ReactiveActions.Helpers
             ExecutionContext.RegisterDataQuery(modelFilter, filterParams);
         }
 
-        protected TModel TrackEntityQuery<TModel>(TModel queryResult, string modelFilterName, params object[] filterParams)
+        protected TModel TrackEntityQuery<TModel>(TModel queryResult, string modelFilterName, params object[] filterParams) where TModel : class
         {
             if (modelFilterName == null)
                 throw new ArgumentNullException(nameof(modelFilterName));
@@ -69,7 +69,7 @@ namespace MagisIT.ReactiveActions.Helpers
         }
 
         protected TCollection TrackCollectionQuery<TModel, TCollection>(TCollection queryResult, string modelFilterName, params object[] filterParams)
-            where TCollection : ICollection<TModel>
+            where TModel : class where TCollection : ICollection<TModel>
         {
             if (queryResult == null)
                 throw new ArgumentNullException(nameof(queryResult));
@@ -94,7 +94,16 @@ namespace MagisIT.ReactiveActions.Helpers
             return queryResult;
         }
 
-        protected ICollection<TModel> TrackCollectionQuery<TModel>(ICollection<TModel> queryResult, string modelFilterName, params object[] filterParams) =>
+        protected ICollection<TModel> TrackCollectionQuery<TModel>(ICollection<TModel> queryResult, string modelFilterName, params object[] filterParams) where TModel : class =>
             TrackCollectionQuery<TModel, ICollection<TModel>>(queryResult, modelFilterName, filterParams);
+
+        protected Task TrackModelUpdateAsync<TModel>(TModel updatedModel, TModel oldModel = null) where TModel : class =>
+            ExecutionContext.ActionExecutor.PublishModelUpdateAsync(updatedModel, oldModel);
+
+        protected Task TrackEntityCreatedAsync<TModel>(TModel createdEntity) where TModel : class => TrackModelUpdateAsync(createdEntity);
+
+        protected Task TrackEntityChangedAsync<TModel>(TModel beforeChange, TModel afterChange) where TModel : class => TrackModelUpdateAsync(afterChange, beforeChange);
+
+        protected Task TrackEntityDeletedAsync<TModel>(TModel deletedEntity) where TModel : class => TrackModelUpdateAsync(null, deletedEntity);
     }
 }

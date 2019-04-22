@@ -10,13 +10,14 @@ using MagisIT.ReactiveActions.Attributes;
 using MagisIT.ReactiveActions.Reactivity;
 using MagisIT.ReactiveActions.Reactivity.Persistence;
 using MagisIT.ReactiveActions.Reactivity.UpdateHandling;
+using MarcusW.SharpUtils.Core.Extensions;
 
 namespace MagisIT.ReactiveActions
 {
     public class ActionBrokerBuilder
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly IActionBuilder _actionBuilder;
+        private readonly IActionDelegateBuilder _actionDelegateBuilder;
         private readonly ITrackingSessionStore _trackingSessionStore;
 
         private readonly IDictionary<string, Action> _actions = new Dictionary<string, Action>();
@@ -25,16 +26,16 @@ namespace MagisIT.ReactiveActions
 
         private bool _built = false;
 
-        public ActionBrokerBuilder(IServiceProvider serviceProvider, IActionBuilder actionBuilder, ITrackingSessionStore trackingSessionStore)
+        public ActionBrokerBuilder(IServiceProvider serviceProvider, IActionDelegateBuilder actionDelegateBuilder, ITrackingSessionStore trackingSessionStore)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            _actionBuilder = actionBuilder ?? throw new ArgumentNullException(nameof(actionBuilder));
+            _actionDelegateBuilder = actionDelegateBuilder ?? throw new ArgumentNullException(nameof(actionDelegateBuilder));
             _trackingSessionStore = trackingSessionStore ?? throw new ArgumentNullException(nameof(trackingSessionStore));
         }
 
         public ActionBrokerBuilder(IServiceProvider serviceProvider, ITrackingSessionStore trackingSessionStore) : this(
             serviceProvider,
-            new ReflectionActionBuilder(),
+            new ReflectionActionDelegateBuilder(),
             trackingSessionStore) { }
 
         public ActionBrokerBuilder AddAction<TActionProvider>(string actionMethodName) where TActionProvider : IActionProvider, new()
@@ -50,18 +51,70 @@ namespace MagisIT.ReactiveActions
             // Search for action method
             MethodInfo actionMethod = actionProviderType.GetMethod(actionMethodName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.InvokeMethod);
             if (actionMethod == null || actionMethod.DeclaringType != actionProviderType)
-                throw new ArgumentException("Action method not found in action provider class.", nameof(actionMethodName));
-            if (!typeof(Task).IsAssignableFrom(actionMethod.ReturnType))
-                throw new ArgumentException("Action method does not return a task.", nameof(actionMethodName));
+                throw new ArgumentException($"Action method {actionMethodName} not found in action provider class {actionProviderType.Name}.", nameof(actionMethodName));
             Debug.Assert(actionMethodName == actionMethod.Name);
 
             // Get action attribute
             var actionAttribute = actionMethod.GetCustomAttribute<ActionAttribute>();
             if (actionAttribute == null)
-                throw new ArgumentException("Action method has no Action attribute", nameof(actionMethodName));
+                throw new ArgumentException($"Action method {actionMethodName} has no Action attribute", nameof(actionMethodName));
 
-            // Construct action
-            Action action = _actionBuilder.BuildAction(_serviceProvider, actionProviderType, actionMethod, actionMethodName);
+            // Search for reactivity attribute
+            var reactivityAttribute = actionMethod.GetCustomAttribute<ReactiveAttribute>();
+
+            // Detect action type
+            ActionType actionType = ActionType.Default;
+            if (reactivityAttribute is ReactiveCollectionAttribute)
+                actionType = ActionType.ReactiveCollection;
+            else if (reactivityAttribute != null)
+                actionType = ActionType.Reactive;
+
+            // Check return type of the action method
+            Type returnType = actionMethod.ReturnType;
+            if (!typeof(Task).IsAssignableFrom(returnType))
+                throw new ArgumentException($"Action method {actionMethodName} does not return a task.", nameof(actionMethodName));
+
+            // Get result type based on action type
+            Type resultType, resultModelType;
+            if (actionType.HasFlag(ActionType.Reactive))
+            {
+                if (returnType.GetGenericTypeDefinition() != typeof(Task<>))
+                    throw new ArgumentException($"Reactive actions need to return a result: {actionMethodName}", nameof(actionMethodName));
+                resultType = returnType.GenericTypeArguments[0];
+
+                // Is the result a collection of models?
+                if (actionType.HasFlag(ActionType.ReactiveCollection))
+                {
+                    // Result should be a collection of entities
+                    if (!typeof(ICollection<>).IsGenericTypeDefinitionAssignableFrom(resultType))
+                        throw new ArgumentException($"Reactive collection actions need to return a collection of entities: {actionMethodName}", nameof(actionMethodName));
+                    resultModelType = resultType.GenericTypeArguments[0];
+                }
+                else
+                {
+                    // The result should be one single entity (will be checked later)
+                    resultModelType = resultType;
+                }
+            }
+            else
+            {
+                // We know it's a task. Now check, that's it not an Task<> or something
+                if (returnType != typeof(Task))
+                    throw new ArgumentException($"Non-reactive action methods must not return a result: {actionMethodName}", nameof(actionMethodName));
+                resultModelType = resultType = null;
+            }
+
+            // The result model should be a simple class, not a collection or something like that
+            if (resultModelType != null && (!resultModelType.IsClass || resultModelType.IsGenericType))
+                throw new ArgumentException($"Reactive actions should return one or more simple non-generic model-classes: {actionMethodName}", nameof(actionMethod));
+
+            // Construct action delegate
+            ActionDelegate actionDelegate = _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, actionProviderType, actionMethod);
+            if (actionDelegate == null)
+                throw new InvalidOperationException("Built action delegate must not be null.");
+
+            // Create a new action
+            var action = new Action(actionMethodName, actionDelegate, actionMethod, actionType, resultType, resultModelType);
 
             // Register action
             _actions.Add(actionMethodName, action);
@@ -69,67 +122,69 @@ namespace MagisIT.ReactiveActions
             return this;
         }
 
-        public ActionBrokerBuilder AddModelFilter<TModel>(Func<TModel, bool> filterDelegate)
+        public ActionBrokerBuilder AddModelFilter<TModel>(Func<TModel, bool> filterDelegate) where TModel : class
         {
             InternalAddModelFilter<TModel>(filterDelegate);
             return this;
         }
 
-        public ActionBrokerBuilder AddModelFilter<TModel, T1>(Func<TModel, T1, bool> filterDelegate)
+        public ActionBrokerBuilder AddModelFilter<TModel, T1>(Func<TModel, T1, bool> filterDelegate) where TModel : class
         {
             InternalAddModelFilter<TModel>(filterDelegate);
             return this;
         }
 
-        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2>(Func<TModel, T1, T2, bool> filterDelegate)
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2>(Func<TModel, T1, T2, bool> filterDelegate) where TModel : class
         {
             InternalAddModelFilter<TModel>(filterDelegate);
             return this;
         }
 
-        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3>(Func<TModel, T1, T2, T3, bool> filterDelegate)
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3>(Func<TModel, T1, T2, T3, bool> filterDelegate) where TModel : class
         {
             InternalAddModelFilter<TModel>(filterDelegate);
             return this;
         }
 
-        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4>(Func<TModel, T1, T2, T3, T4, bool> filterDelegate)
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4>(Func<TModel, T1, T2, T3, T4, bool> filterDelegate) where TModel : class
         {
             InternalAddModelFilter<TModel>(filterDelegate);
             return this;
         }
 
-        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5>(Func<TModel, T1, T2, T3, T4, T5, bool> filterDelegate)
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5>(Func<TModel, T1, T2, T3, T4, T5, bool> filterDelegate) where TModel : class
         {
             InternalAddModelFilter<TModel>(filterDelegate);
             return this;
         }
 
-        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5, T6>(Func<TModel, T1, T2, T3, T4, T5, T6, bool> filterDelegate)
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5, T6>(Func<TModel, T1, T2, T3, T4, T5, T6, bool> filterDelegate) where TModel : class
         {
             InternalAddModelFilter<TModel>(filterDelegate);
             return this;
         }
 
-        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5, T6, T7>(Func<TModel, T1, T2, T3, T4, T5, T6, T7, bool> filterDelegate)
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5, T6, T7>(Func<TModel, T1, T2, T3, T4, T5, T6, T7, bool> filterDelegate) where TModel : class
         {
             InternalAddModelFilter<TModel>(filterDelegate);
             return this;
         }
 
-        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5, T6, T7, T8>(Func<TModel, T1, T2, T3, T4, T5, T6, T7, T8, bool> filterDelegate)
+        public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5, T6, T7, T8>(Func<TModel, T1, T2, T3, T4, T5, T6, T7, T8, bool> filterDelegate) where TModel : class
         {
             InternalAddModelFilter<TModel>(filterDelegate);
             return this;
         }
 
         public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5, T6, T7, T8, T9>(Func<TModel, T1, T2, T3, T4, T5, T6, T7, T8, T9, bool> filterDelegate)
+            where TModel : class
         {
             InternalAddModelFilter<TModel>(filterDelegate);
             return this;
         }
 
         public ActionBrokerBuilder AddModelFilter<TModel, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Func<TModel, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, bool> filterDelegate)
+            where TModel : class
         {
             InternalAddModelFilter<TModel>(filterDelegate);
             return this;
@@ -162,7 +217,7 @@ namespace MagisIT.ReactiveActions
             return actionBroker;
         }
 
-        private void InternalAddModelFilter<TModel>(Delegate filterDelegate)
+        private void InternalAddModelFilter<TModel>(Delegate filterDelegate) where TModel : class
         {
             if (filterDelegate == null)
                 throw new ArgumentNullException(nameof(filterDelegate));

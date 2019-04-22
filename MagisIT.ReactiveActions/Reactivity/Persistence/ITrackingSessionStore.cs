@@ -12,6 +12,8 @@ namespace MagisIT.ReactiveActions.Reactivity.Persistence
 
         Task<IEnumerable<DataQuery>> GetDataQueriesForModelAsync(string trackingSession, string modelTypeName);
 
+        Task<IEnumerable<DataQuery>> GetGlobalDataQueriesForModelAsync(string modelTypeName);
+
         Task<ActionCall> GetActionCallAsync(string trackingSession, string id);
 
         Task<IEnumerable<ActionCall>> GetActionCallsForActionAsync(string trackingSession, string actionName);
