@@ -33,14 +33,17 @@ namespace MagisIT.ReactiveActions.Sample
             builder.AddAction<ProductActions>(nameof(ProductActions.GetProductAsync));
             builder.AddAction<ProductActions>(nameof(ProductActions.AddProductAsync));
             builder.AddAction<ProductActions>(nameof(ProductActions.DeleteProductAsync));
+
             builder.AddAction<ShoppingCartActions>(nameof(ShoppingCartActions.GetCartItemsAsync));
             builder.AddAction<ShoppingCartActions>(nameof(ShoppingCartActions.GetCartItemAsync));
             builder.AddAction<ShoppingCartActions>(nameof(ShoppingCartActions.AddProductToCartAsync));
             builder.AddAction<ShoppingCartActions>(nameof(ShoppingCartActions.RemoveProductFromCartAsync));
+
             builder.AddModelFilter<Product>(ModelFilters.GetProductsFilter);
             builder.AddModelFilter<Product, string>(ModelFilters.GetProductByIdFilter);
             builder.AddModelFilter<ShoppingCartItem>(ModelFilters.GetCartItemsFilter);
             builder.AddModelFilter<ShoppingCartItem, string>(ModelFilters.GetCartItemForProductIdFilter);
+
             builder.AddActionResultUpdateHandler(new ConsoleOutputUpdateHandler());
 
             return builder.Build();
