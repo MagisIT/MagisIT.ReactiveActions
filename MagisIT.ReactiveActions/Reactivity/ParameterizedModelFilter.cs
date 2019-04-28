@@ -22,6 +22,9 @@ namespace MagisIT.ReactiveActions.Reactivity
 
         private string BuildIdentifier()
         {
+            if (FilterParams.Length == 0)
+                return ModelFilter.FullName;
+
             string parameters = string.Join(":", FilterParams.Select(p => p.ToString()));
             return $"{ModelFilter.FullName}:{parameters}";
         }

@@ -191,9 +191,11 @@ namespace MagisIT.ReactiveActions
             string actionName = rootContext.Action.Name;
             string actionDescriptorTypeName = actionDescriptor?.GetType().Name;
 
-            string actionCallId = actionName;
-            if (actionDescriptor != null)
-                actionCallId += $":{actionDescriptorTypeName}:{actionDescriptor.CombinedIdentifier}";
+            string actionCallId = $"{actionName}:";
+            if (actionDescriptor == null)
+                actionCallId += "%";
+            else
+                actionCallId += $"{actionDescriptorTypeName}:{actionDescriptor.CombinedIdentifier}";
 
             var actionCall = new ActionCall {
                 TrackingSession = trackingSession,

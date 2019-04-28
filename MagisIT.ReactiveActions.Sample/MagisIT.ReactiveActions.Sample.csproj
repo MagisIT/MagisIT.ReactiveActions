@@ -1,18 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>netcoreapp2.2</TargetFramework>
-        <LangVersion>latest</LangVersion>
-    </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0"/>
+  </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\MagisIT.ReactiveActions.TrackingSessionStore.InMemory\MagisIT.ReactiveActions.TrackingSessionStore.InMemory.csproj" />
-      <ProjectReference Include="..\MagisIT.ReactiveActions\MagisIT.ReactiveActions.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MagisIT.ReactiveActions.TrackingSessionStore.InMemory\MagisIT.ReactiveActions.TrackingSessionStore.InMemory.csproj"/>
+    <ProjectReference Include="..\MagisIT.ReactiveActions\MagisIT.ReactiveActions.csproj"/>
+  </ItemGroup>
 
 </Project>
