@@ -7,5 +7,7 @@ namespace MagisIT.ReactiveActions.Sample.Models
         public string Name { get; set; }
 
         public double Price { get; set; }
+
+        public int AvailableAmount { get; set; }
     }
 }

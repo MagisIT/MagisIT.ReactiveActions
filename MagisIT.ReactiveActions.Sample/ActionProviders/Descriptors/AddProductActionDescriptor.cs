@@ -10,6 +10,8 @@ namespace MagisIT.ReactiveActions.Sample.ActionProviders.Descriptors
 
         public double Price { get; set; }
 
-        public string CombinedIdentifier => $"{Id}:{Name}:{Price}";
+        public int AvailableAmount { get; set; }
+
+        public string CombinedIdentifier => $"{Id}:{Name}:{Price}:{AvailableAmount}";
     }
 }

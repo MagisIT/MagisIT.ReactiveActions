@@ -23,6 +23,10 @@ namespace MagisIT.ReactiveActions.TrackingSessionStore.Redis
         private const Formatting JsonFormatting = Formatting.None;
 #endif
 
+        private static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings {
+            TypeNameHandling = TypeNameHandling.Auto
+        };
+
         private readonly IDatabase _redisDatabase;
         private readonly string _prefix;
 
@@ -78,7 +82,7 @@ namespace MagisIT.ReactiveActions.TrackingSessionStore.Redis
             string actionCallReferencesSetKey = $"{actionCallKey}:refs";
 
             // Serialize action call
-            string actionCallJson = JsonConvert.SerializeObject(actionCall, JsonFormatting);
+            string actionCallJson = SerializeObject(actionCall);
 
             // Load scripts
             LoadedLuaScript removeActionCallReferencesScript = await GetScriptAsync(RemoveActionCallReferencesScript).ConfigureAwait(false);
@@ -107,7 +111,7 @@ namespace MagisIT.ReactiveActions.TrackingSessionStore.Redis
                     string dataQueryKey = BuildDataQueryKey(trackingSession, dataQuery.Id);
 
                     // Serialize data query
-                    string dataQueryJson = JsonConvert.SerializeObject(dataQuery, JsonFormatting);
+                    string dataQueryJson = SerializeObject(dataQuery);
 
                     // Add data query
                     transaction.AddOperation(t => t.ScriptEvaluateAsync(registerDataQueryReferenceScript,
@@ -251,9 +255,11 @@ namespace MagisIT.ReactiveActions.TrackingSessionStore.Redis
 
         private string BuildActionCallKey(string trackingSession, string id) => $"{ActionCallsBaseKey}:{trackingSession}:{id}";
 
-        private DataQuery DeserializeDataQuery(string json) => JsonConvert.DeserializeObject<DataQuery>(json);
+        private string SerializeObject(object value) => JsonConvert.SerializeObject(value, JsonFormatting, JsonSerializerSettings);
 
-        private ActionCall DeserializeActionCall(string json) => JsonConvert.DeserializeObject<ActionCall>(json);
+        private DataQuery DeserializeDataQuery(string json) => JsonConvert.DeserializeObject<DataQuery>(json, JsonSerializerSettings);
+
+        private ActionCall DeserializeActionCall(string json) => JsonConvert.DeserializeObject<ActionCall>(json, JsonSerializerSettings);
 
         private async Task<IEnumerable<DataQuery>> GetDataQueriesByModelTypeAsync(string modelTypeName, string filterKeyPrefix = null, Func<DataQuery, bool> filterFunc = null)
         {

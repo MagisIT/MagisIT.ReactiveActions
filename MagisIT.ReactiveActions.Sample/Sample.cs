@@ -28,6 +28,14 @@ namespace MagisIT.ReactiveActions.Sample
                     PrintProduct(product);
             }
 
+            Console.WriteLine($"-> Getting amount of milk in stock as {session}...");
+            {
+                int productsInStock = await _actionBroker.InvokeAndTrackActionAsync<int>(session,
+                                                                                         nameof(ProductActions.GetProductAmountInStockAsync),
+                                                                                         new GetProductAmountInStockActionDescriptor { ProductId = "milk" }).ConfigureAwait(false);
+                Console.WriteLine($"    Milk in Stock: {productsInStock}");
+            }
+
             await PauseAsync().ConfigureAwait(false);
 
             Console.WriteLine("-> Adding product \"cookies\"...");
@@ -36,7 +44,8 @@ namespace MagisIT.ReactiveActions.Sample
                                                       new AddProductActionDescriptor {
                                                           Id = "cookies",
                                                           Name = "Cookies",
-                                                          Price = 4
+                                                          Price = 4,
+                                                          AvailableAmount = 7
                                                       }).ConfigureAwait(false);
             }
 
@@ -120,7 +129,8 @@ namespace MagisIT.ReactiveActions.Sample
             Console.WriteLine();
         }
 
-        private void PrintProduct(Product product) => Console.WriteLine($"    Product: Id: {product.Id} | Name: {product.Name} | Price: {product.Price}");
+        private void PrintProduct(Product product) =>
+            Console.WriteLine($"    Product: ProductId: {product.Id} | Name: {product.Name} | Price: {product.Price} | Available: {product.AvailableAmount}");
 
         private void PrintShoppingCartItem(ShoppingCartItem cartItem) => Console.WriteLine($"    ShoppingCartItem: ProductId: {cartItem.ProductId} | Amount: {cartItem.Amount}");
     }

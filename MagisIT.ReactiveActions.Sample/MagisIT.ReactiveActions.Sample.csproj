@@ -7,12 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0"/>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MagisIT.ReactiveActions.TrackingSessionStore.InMemory\MagisIT.ReactiveActions.TrackingSessionStore.InMemory.csproj"/>
-    <ProjectReference Include="..\MagisIT.ReactiveActions\MagisIT.ReactiveActions.csproj"/>
+    <ProjectReference Include="..\MagisIT.ReactiveActions.TrackingSessionStore.InMemory\MagisIT.ReactiveActions.TrackingSessionStore.InMemory.csproj" />
+    <ProjectReference Include="..\MagisIT.ReactiveActions.TrackingSessionStore.Redis\MagisIT.ReactiveActions.TrackingSessionStore.Redis.csproj" />
+    <ProjectReference Include="..\MagisIT.ReactiveActions\MagisIT.ReactiveActions.csproj" />
   </ItemGroup>
 
 </Project>

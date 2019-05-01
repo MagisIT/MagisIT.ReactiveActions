@@ -14,7 +14,7 @@ for i, data_query_key in ipairs(data_query_keys) do
     if data_query_key:sub(1, #data_query_session_prefix) == start data_query_session_prefix then
         -- Get data query
         local data_query_json = redis.call("GET", data_query_key)
-        if data_query_json != nil then
+        if data_query_json then
             local data_query = cjson.decode(data_query_json)
 
             -- Delete data query entry

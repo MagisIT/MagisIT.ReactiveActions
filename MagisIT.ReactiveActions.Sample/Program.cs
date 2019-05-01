@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
+using MagisIT.ReactiveActions.Reactivity.Persistence;
 using MagisIT.ReactiveActions.Sample.ActionProviders;
 using MagisIT.ReactiveActions.Sample.DataSource;
 using MagisIT.ReactiveActions.Sample.Models;
 using MagisIT.ReactiveActions.TrackingSessionStore.InMemory;
+using MagisIT.ReactiveActions.TrackingSessionStore.Redis;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 namespace MagisIT.ReactiveActions.Sample
 {
@@ -27,12 +30,23 @@ namespace MagisIT.ReactiveActions.Sample
 
         private static ActionBroker BuildActionBroker(IServiceProvider serviceProvider)
         {
-            var builder = new ActionBrokerBuilder(serviceProvider, new InMemoryStore());
+            var redisClient = ConnectionMultiplexer.Connect(new ConfigurationOptions {
+                EndPoints = {
+                    { "10.200.1.100", 6379 }
+                },
+                Password = "redis123"
+            });
+
+            //ITrackingSessionStore store = new InMemoryStore();
+            ITrackingSessionStore store = new RedisStore(redisClient.GetDatabase(), "tracker");
+
+            var builder = new ActionBrokerBuilder(serviceProvider, store);
 
             builder.AddAction<ProductActions>(nameof(ProductActions.GetProductsAsync));
             builder.AddAction<ProductActions>(nameof(ProductActions.GetProductAsync));
             builder.AddAction<ProductActions>(nameof(ProductActions.AddProductAsync));
             builder.AddAction<ProductActions>(nameof(ProductActions.DeleteProductAsync));
+            builder.AddAction<ProductActions>(nameof(ProductActions.GetProductAmountInStockAsync));
 
             builder.AddAction<ShoppingCartActions>(nameof(ShoppingCartActions.GetCartItemsAsync));
             builder.AddAction<ShoppingCartActions>(nameof(ShoppingCartActions.GetCartItemAsync));

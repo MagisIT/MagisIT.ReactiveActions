@@ -37,7 +37,8 @@ namespace MagisIT.ReactiveActions.Sample.ActionProviders
             var product = new Product {
                 Id = actionDescriptor.Id,
                 Name = actionDescriptor.Name,
-                Price = actionDescriptor.Price
+                Price = actionDescriptor.Price,
+                AvailableAmount = actionDescriptor.AvailableAmount
             };
 
             dataSource.Products.Add(product);
@@ -57,6 +58,20 @@ namespace MagisIT.ReactiveActions.Sample.ActionProviders
 
             dataSource.Products.Remove(product);
             await TrackEntityDeletedAsync(product).ConfigureAwait(false);
+        }
+
+        [Action, Reactive]
+        public async Task<int> GetProductAmountInStockAsync(GetProductAmountInStockActionDescriptor actionDescriptor)
+        {
+            // When any result below changes, this action will change, too.
+            var product = await InvokeActionAsync<Product>(nameof(GetProductAsync), new GetProductActionDescriptor { Id = actionDescriptor.ProductId }).ConfigureAwait(false);
+            var cartItem = await InvokeActionAsync<ShoppingCartItem>(nameof(ShoppingCartActions.GetCartItemAsync),
+                                                                     new GetCartItemActionDescriptor { ProductId = actionDescriptor.ProductId }).ConfigureAwait(false);
+
+            int amount = product.AvailableAmount;
+            if (cartItem != null)
+                amount -= cartItem.Amount;
+            return amount;
         }
     }
 }

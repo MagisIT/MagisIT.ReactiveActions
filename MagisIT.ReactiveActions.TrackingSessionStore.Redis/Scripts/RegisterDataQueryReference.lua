@@ -10,7 +10,7 @@ local data_query_json = @DataQueryJson
 
 -- Check if the data query already exists
 local existing_json = redis.call("GET", data_query_key)
-if existing_json != nil then
+if existing_json then
     -- Get action call references
     local data_query = cjson.decode(data_query_json)
     local action_call_refs = data_query["AffectedActionCalls"]
@@ -32,7 +32,7 @@ if existing_json != nil then
         end
 
         -- Does one exist?
-        if existing != nil then
+        if existing then
             -- Just keep it, but favour indirect references
             if not ref["Direct"] then
                 existing["Direct"] = false

@@ -11,18 +11,18 @@ local data_query_key
 while true do
     -- Get next reference until the end is reached
     data_query_key = redis.call("SPOP", action_call_references_set_key)
-    if data_query_key == nil then break end
+    if not data_query_key then break end
 
     -- Get data query
     local data_query_json = redis.call("GET", data_query_key)
-    if data_query_json != nil then
+    if data_query_json then
         local data_query = cjson.decode(data_query_json)
         local action_call_refs = data_query["AffectedActionCalls"]
 
         -- Filter for entries that are not referencing the action call
         local filtered_action_call_refs = {}
         for i, ref in ipairs(action_call_refs) do
-            if ref["ActionCallId"] != action_call_id then
+            if ref["ActionCallId"] ~= action_call_id then
                 table.insert(filtered_action_call_refs, ref)
             end
         end

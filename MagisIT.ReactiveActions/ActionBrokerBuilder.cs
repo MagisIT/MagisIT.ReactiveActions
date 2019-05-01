@@ -105,8 +105,8 @@ namespace MagisIT.ReactiveActions
             }
 
             // The result model should be a simple class, not a collection or something like that
-            if (resultModelType != null && (!resultModelType.IsClass || resultModelType.IsGenericType))
-                throw new ArgumentException($"Reactive actions should return one or more simple non-generic model-classes: {actionMethodName}", nameof(actionMethod));
+            if (resultModelType != null && ((!resultModelType.IsClass && !resultModelType.IsPrimitive) || resultModelType.IsGenericType))
+                throw new ArgumentException($"Reactive actions should return simple non-generic objects or collections of them: {actionMethodName}", nameof(actionMethod));
 
             // Construct action delegate
             ActionDelegate actionDelegate = _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, actionProviderType, actionMethod);
