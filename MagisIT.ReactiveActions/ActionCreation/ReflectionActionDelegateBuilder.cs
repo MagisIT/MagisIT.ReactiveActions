@@ -69,7 +69,7 @@ namespace MagisIT.ReactiveActions.ActionCreation
                 }
 
                 if (!actionDescriptionUsed && actionDescriptor != null)
-                    throw new ArgumentException("This action doesn't expect an action description.", nameof(actionDescriptor));
+                    throw new ArgumentException("This action doesn't expect an action descriptor.", nameof(actionDescriptor));
 
                 // Create action provider instance
                 object actionProvider = Activator.CreateInstance(actionProviderType);

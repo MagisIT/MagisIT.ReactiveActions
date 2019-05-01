@@ -20,9 +20,11 @@ namespace MagisIT.ReactiveActions
         private readonly IActionDelegateBuilder _actionDelegateBuilder;
         private readonly ITrackingSessionStore _trackingSessionStore;
 
-        private readonly IDictionary<string, Action> _actions = new Dictionary<string, Action>();
-        private readonly IDictionary<string, ModelFilter> _modelFilters = new Dictionary<string, ModelFilter>();
-        private readonly IList<IActionResultUpdateHandler> _actionResultUpdateHandlers = new List<IActionResultUpdateHandler>();
+        internal IDictionary<string, Action> Actions { get; } = new Dictionary<string, Action>();
+
+        internal IDictionary<string, ModelFilter> ModelFilters { get; } = new Dictionary<string, ModelFilter>();
+
+        internal IList<IActionResultUpdateHandler> ActionResultUpdateHandlers { get; } = new List<IActionResultUpdateHandler>();
 
         private bool _built = false;
 
@@ -42,7 +44,7 @@ namespace MagisIT.ReactiveActions
         {
             if (actionMethodName == null)
                 throw new ArgumentNullException(nameof(actionMethodName));
-            if (_actions.ContainsKey(actionMethodName))
+            if (Actions.ContainsKey(actionMethodName))
                 throw new ArgumentException($"An action method with the same name is already registered: {actionMethodName}", nameof(actionMethodName));
             AssertNotBuilt();
 
@@ -78,7 +80,7 @@ namespace MagisIT.ReactiveActions
             Type resultType, resultModelType;
             if (actionType.HasFlag(ActionType.Reactive))
             {
-                if (returnType.GetGenericTypeDefinition() != typeof(Task<>))
+                if (!returnType.IsGenericType || returnType.GetGenericTypeDefinition() != typeof(Task<>))
                     throw new ArgumentException($"Reactive actions need to return a result: {actionMethodName}", nameof(actionMethodName));
                 resultType = returnType.GenericTypeArguments[0];
 
@@ -117,7 +119,7 @@ namespace MagisIT.ReactiveActions
             var action = new Action(actionMethodName, actionDelegate, actionMethod, actionType, resultType, resultModelType);
 
             // Register action
-            _actions.Add(actionMethodName, action);
+            Actions.Add(actionMethodName, action);
 
             return this;
         }
@@ -198,7 +200,7 @@ namespace MagisIT.ReactiveActions
                 throw new ArgumentNullException(nameof(updateHandler));
 
             // Register handler
-            _actionResultUpdateHandlers.Add(updateHandler);
+            ActionResultUpdateHandlers.Add(updateHandler);
 
             return this;
         }
@@ -207,9 +209,9 @@ namespace MagisIT.ReactiveActions
         {
             AssertNotBuilt();
 
-            var actionExecutor = new ActionExecutor((IReadOnlyDictionary<string, Action>)_actions,
-                                                    (IReadOnlyDictionary<string, ModelFilter>)_modelFilters,
-                                                    (IReadOnlyCollection<IActionResultUpdateHandler>)_actionResultUpdateHandlers,
+            var actionExecutor = new ActionExecutor((IReadOnlyDictionary<string, Action>)Actions,
+                                                    (IReadOnlyDictionary<string, ModelFilter>)ModelFilters,
+                                                    (IReadOnlyCollection<IActionResultUpdateHandler>)ActionResultUpdateHandlers,
                                                     _trackingSessionStore);
             var actionBroker = new ActionBroker(actionExecutor);
 
@@ -225,7 +227,7 @@ namespace MagisIT.ReactiveActions
 
             // Check if the method is anoymous (e.g. a lambda) and therefore the naming will be unexpected
             MethodInfo methodInfo = filterDelegate.Method;
-            if (methodInfo.GetCustomAttribute<CompilerGeneratedAttribute>(false) != null)
+            if (filterDelegate.Target?.GetType().GetCustomAttribute<CompilerGeneratedAttribute>() != null || methodInfo.GetCustomAttribute<CompilerGeneratedAttribute>(false) != null)
                 throw new ArgumentException("The filter delegate must not be an anonymous method.", nameof(filterDelegate));
 
             // Ensure all parameters are simply serializable
@@ -234,12 +236,12 @@ namespace MagisIT.ReactiveActions
 
             // Check if this filter is already registered
             string filterName = methodInfo.Name;
-            if (_actions.ContainsKey(filterName))
+            if (Actions.ContainsKey(filterName))
                 throw new ArgumentException($"A model filter with the same name is already registered: {filterName}", nameof(filterDelegate));
 
             // Register filter
             var filter = new ModelFilter(typeof(TModel), filterName, filterDelegate);
-            _modelFilters.Add(filterName, filter);
+            ModelFilters.Add(filterName, filter);
         }
 
         private void AssertNotBuilt()

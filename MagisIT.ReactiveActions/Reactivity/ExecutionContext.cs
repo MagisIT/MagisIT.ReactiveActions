@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace MagisIT.ReactiveActions.Reactivity
 {
-    public class ExecutionContext
+    public class ExecutionContext : IExecutionContext
     {
-        public ActionExecutor ActionExecutor { get; }
+        public IActionExecutor ActionExecutor { get; }
 
         public Action Action { get; }
 
@@ -17,11 +17,11 @@ namespace MagisIT.ReactiveActions.Reactivity
 
         public bool TrackingEnabled => TrackingSession != null;
 
-        public IList<ExecutionContext> SubContexts { get; } = new List<ExecutionContext>();
+        public IList<IExecutionContext> SubContexts { get; } = new List<IExecutionContext>();
 
         public IList<ParameterizedModelFilter> DataQueries { get; } = new List<ParameterizedModelFilter>();
 
-        private ExecutionContext(ActionExecutor actionExecutor, Action action, string trackingSession = null)
+        private ExecutionContext(IActionExecutor actionExecutor, Action action, string trackingSession = null)
         {
             ActionExecutor = actionExecutor;
             Action = action;
@@ -53,7 +53,7 @@ namespace MagisIT.ReactiveActions.Reactivity
             DataQueries.Add(new ParameterizedModelFilter(modelFilter, filterParams));
         }
 
-        internal ExecutionContext CreateSubContext(Action action)
+        public IExecutionContext CreateSubContext(Action action)
         {
             if (action == null)
                 throw new ArgumentNullException(nameof(action));
@@ -63,7 +63,7 @@ namespace MagisIT.ReactiveActions.Reactivity
             return subContext;
         }
 
-        internal static ExecutionContext CreateRootContext(ActionExecutor actionExecutor, Action action, string trackingSession = null)
+        public static ExecutionContext CreateRootContext(IActionExecutor actionExecutor, Action action, string trackingSession = null)
         {
             if (actionExecutor == null)
                 throw new ArgumentNullException(nameof(actionExecutor));

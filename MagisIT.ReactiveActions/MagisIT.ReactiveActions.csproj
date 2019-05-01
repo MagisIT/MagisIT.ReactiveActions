@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MarcusW.SharpUtils\MarcusW.SharpUtils.Core\MarcusW.SharpUtils.Core.csproj"/>
+    <ProjectReference Include="..\MarcusW.SharpUtils\MarcusW.SharpUtils.Core\MarcusW.SharpUtils.Core.csproj" />
   </ItemGroup>
 
 </Project>

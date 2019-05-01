@@ -10,7 +10,7 @@ using MagisIT.ReactiveActions.Reactivity.UpdateHandling;
 
 namespace MagisIT.ReactiveActions
 {
-    public class ActionExecutor
+    public class ActionExecutor : IActionExecutor
     {
         private readonly IReadOnlyDictionary<string, Action> _actions;
 
@@ -39,7 +39,7 @@ namespace MagisIT.ReactiveActions
             return (TResult)await InternalInvokeRootActionAsync(name, actionDescriptor, trackingSession).ConfigureAwait(false);
         }
 
-        public Task<object> InvokeSubActionAsync(ExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
+        public Task<object> InvokeSubActionAsync(IExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
         {
             if (currentExecutionContext == null)
                 throw new ArgumentNullException(nameof(currentExecutionContext));
@@ -47,7 +47,7 @@ namespace MagisIT.ReactiveActions
             return InternalInvokeSubActionAsync(currentExecutionContext, name, actionDescriptor);
         }
 
-        public async Task<TResult> InvokeSubActionAsync<TResult>(ExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
+        public async Task<TResult> InvokeSubActionAsync<TResult>(IExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
         {
             if (currentExecutionContext == null)
                 throw new ArgumentNullException(nameof(currentExecutionContext));
@@ -158,7 +158,7 @@ namespace MagisIT.ReactiveActions
                 throw new ArgumentException("Non-reactive actions cannot be tracked", nameof(trackingEnabled));
 
             // Create root level of the execution tree
-            ExecutionContext executionContext = ExecutionContext.CreateRootContext(this, action, trackingSession);
+            IExecutionContext executionContext = ExecutionContext.CreateRootContext(this, action, trackingSession);
 
             object result = await action.ExecuteAsync(executionContext, actionDescriptor).ConfigureAwait(false);
 
@@ -169,7 +169,7 @@ namespace MagisIT.ReactiveActions
             return result;
         }
 
-        private Task<object> InternalInvokeSubActionAsync(ExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
+        private Task<object> InternalInvokeSubActionAsync(IExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
         {
             if (currentExecutionContext == null)
                 throw new ArgumentNullException(nameof(currentExecutionContext));
@@ -180,12 +180,12 @@ namespace MagisIT.ReactiveActions
 
             // The context for the following execution
             Action action = _actions[name];
-            ExecutionContext nextExecutionContext = currentExecutionContext.CreateSubContext(action);
+            IExecutionContext nextExecutionContext = currentExecutionContext.CreateSubContext(action);
 
             return action.ExecuteAsync(nextExecutionContext, actionDescriptor);
         }
 
-        private Task StoreExecutionAsync(ExecutionContext rootContext, IActionDescriptor actionDescriptor = null)
+        private Task StoreExecutionAsync(IExecutionContext rootContext, IActionDescriptor actionDescriptor = null)
         {
             string trackingSession = rootContext.TrackingSession;
             string actionName = rootContext.Action.Name;
@@ -207,7 +207,7 @@ namespace MagisIT.ReactiveActions
             var dataQueries = new List<DataQuery>();
 
             // Extract the data queries recursively from the execution contexts
-            void VisitExecutionContext(ExecutionContext context)
+            void VisitExecutionContext(IExecutionContext context)
             {
                 dataQueries.AddRange(context.DataQueries.Select(filter => new DataQuery {
                     TrackingSession = trackingSession,
@@ -223,7 +223,7 @@ namespace MagisIT.ReactiveActions
                     }
                 }));
 
-                foreach (ExecutionContext subContext in context.SubContexts)
+                foreach (IExecutionContext subContext in context.SubContexts)
                     VisitExecutionContext(subContext);
             }
 

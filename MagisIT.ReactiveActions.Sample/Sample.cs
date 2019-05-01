@@ -9,9 +9,9 @@ namespace MagisIT.ReactiveActions.Sample
 {
     public class Sample
     {
-        private readonly ActionBroker _actionBroker;
+        private readonly IActionBroker _actionBroker;
 
-        public Sample(ActionBroker actionBroker)
+        public Sample(IActionBroker actionBroker)
         {
             _actionBroker = actionBroker ?? throw new ArgumentNullException(nameof(actionBroker));
         }

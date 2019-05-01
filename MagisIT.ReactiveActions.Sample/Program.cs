@@ -28,7 +28,7 @@ namespace MagisIT.ReactiveActions.Sample
             return services.GetRequiredService<Sample>().RunAsync();
         }
 
-        private static ActionBroker BuildActionBroker(IServiceProvider serviceProvider)
+        private static IActionBroker BuildActionBroker(IServiceProvider serviceProvider)
         {
             var redisClient = ConnectionMultiplexer.Connect(new ConfigurationOptions {
                 EndPoints = {

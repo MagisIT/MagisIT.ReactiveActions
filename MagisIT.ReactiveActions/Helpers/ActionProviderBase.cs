@@ -9,7 +9,7 @@ namespace MagisIT.ReactiveActions.Helpers
 {
     public abstract class ActionProviderBase : IActionProvider
     {
-        public ExecutionContext ExecutionContext { get; set; }
+        public IExecutionContext ExecutionContext { get; set; }
 
         protected Task<object> InvokeActionAsync(string name, IActionDescriptor actionDescriptor = null)
         {

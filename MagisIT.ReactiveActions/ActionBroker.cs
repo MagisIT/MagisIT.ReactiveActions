@@ -4,11 +4,11 @@ using System.Threading.Tasks;
 
 namespace MagisIT.ReactiveActions
 {
-    public class ActionBroker
+    public class ActionBroker : IActionBroker
     {
-        private readonly ActionExecutor _actionExecutor;
+        private readonly IActionExecutor _actionExecutor;
 
-        internal ActionBroker(ActionExecutor actionExecutor)
+        internal ActionBroker(IActionExecutor actionExecutor)
         {
             _actionExecutor = actionExecutor ?? throw new ArgumentNullException(nameof(actionExecutor));
         }
