@@ -113,6 +113,6 @@ This library provides two ready-to-use store implementations:
 
 ## License
 
-This library is licensed under the conditions of the [MIT license](https://marcusw.mit-license.org/).
+This library is licensed under the conditions of the [MIT license](https://github.com/MagisIT/MagisIT.ReactiveActions/blob/master/LICENSE).
 
 Contributions are very appreciated!
