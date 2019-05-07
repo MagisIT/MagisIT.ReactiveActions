@@ -3,8 +3,16 @@ This framework helps you with writing large real-time applications where every d
 An intelligent filter mechanism detects which data-queries are affected and notifies the data consumers of the changes.
 It's intended for use in Web APIs, but it can be used in any other application as well.
 
-
 ![Travis (.org)](https://img.shields.io/travis/MagisIT/MagisIT.ReactiveActions.svg)
+
+
+## Download from NuGet
+
+[**MagisIT.ReactiveActions**](https://www.nuget.org/packages/MagisIT.ReactiveActions/)
+
+[**MagisIT.ReactiveActions.TrackingSessionStore.InMemory**](https://www.nuget.org/packages/MagisIT.ReactiveActions.TrackingSessionStore.InMemory/)
+
+[**MagisIT.ReactiveActions.TrackingSessionStore.Redis**](https://www.nuget.org/packages/MagisIT.ReactiveActions.TrackingSessionStore.Redis/)
 
 ## Usage
 
