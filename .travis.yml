@@ -16,6 +16,9 @@ script:
 
 deploy:
   provider: script
-  script: dotnet pack -c Release && find . -name '*.nupkg' -exec dotnet nuget push {} -k $NUGET_KEY -s https://nuget.org \;
+  script: dotnet pack MagisIT.ReactiveActions/MagisIT.ReactiveActions.csproj -c Release && \
+    dotnet pack MagisIT.ReactiveActions.TrackingSessionStore.InMemoroy/MagisIT.ReactiveActions.TrackingSessionStore.InMemoroy.csproj -c Release && \
+    dotnet pack MagisIT.ReactiveActions.TrackingSessionStore.Redis/MagisIT.ReactiveActions.TrackingSessionStore.Redis.csproj -c Release && \
+    find . -name '*.nupkg' -exec dotnet nuget push {} -k $NUGET_KEY -s https://nuget.org \;
   on:
     tags: true
