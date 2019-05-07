@@ -1,0 +1,21 @@
+language: csharp
+solution: MagisIT.ReactiveActions.sln
+dist: xenial
+mono: none
+dotnet: 2.2
+
+services:
+  - redis-server
+
+install:
+  - dotnet restore
+
+script:
+  - dotnet test
+  - dotnet build -c Release
+
+deploy:
+  provider: script
+  script: dotnet pack -c Release && find . -name '*.nupkg' -exec dotnet nuget push {} -k $NUGET_KEY -s https://nuget.org \;
+  on:
+    tags: true

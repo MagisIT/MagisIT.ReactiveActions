@@ -10,6 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 ProjectSection(SolutionItems) = preProject
 	.gitignore = .gitignore
 	.editorconfig = .editorconfig
+	.travis.yml = .travis.yml
 EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MagisIT.ReactiveActions.TrackingSessionStore.InMemory", "MagisIT.ReactiveActions.TrackingSessionStore.InMemory\MagisIT.ReactiveActions.TrackingSessionStore.InMemory.csproj", "{C7E6B366-9384-4DE3-B062-31E023BDA717}"
