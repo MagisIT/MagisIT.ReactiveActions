@@ -4,18 +4,20 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <Import Project="../ProjectProperties.targets"/>
+
   <ItemGroup>
-    <ProjectReference Include="..\MagisIT.ReactiveActions\MagisIT.ReactiveActions.csproj" />
-    <ProjectReference Include="..\MarcusW.SharpUtils\MarcusW.SharpUtils.Redis\MarcusW.SharpUtils.Redis.csproj" />
+    <ProjectReference Include="..\MagisIT.ReactiveActions\MagisIT.ReactiveActions.csproj"/>
+    <ProjectReference Include="..\MarcusW.SharpUtils\MarcusW.SharpUtils.Redis\MarcusW.SharpUtils.Redis.csproj"/>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <PackageReference Include="StackExchange.Redis" Version="2.0.601" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2"/>
+    <PackageReference Include="StackExchange.Redis" Version="2.0.601"/>
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="**\*.lua" />
+    <None Remove="**\*.lua"/>
     <EmbeddedResource Include="**\*.lua">
       <LogicalName>%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
