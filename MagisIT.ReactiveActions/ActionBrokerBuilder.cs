@@ -227,12 +227,17 @@ namespace MagisIT.ReactiveActions
 
             // Check if the method is anoymous (e.g. a lambda) and therefore the naming will be unexpected
             MethodInfo methodInfo = filterDelegate.Method;
-            if (filterDelegate.Target?.GetType().GetCustomAttribute<CompilerGeneratedAttribute>() != null || methodInfo.GetCustomAttribute<CompilerGeneratedAttribute>(false) != null)
+            if (filterDelegate.Target?.GetType().GetCustomAttribute<CompilerGeneratedAttribute>() != null
+                || methodInfo.GetCustomAttribute<CompilerGeneratedAttribute>(false) != null)
                 throw new ArgumentException("The filter delegate must not be an anonymous method.", nameof(filterDelegate));
 
-            // Ensure all parameters are simply serializable
-            if (methodInfo.GetParameters().Skip(1).Any(p => !p.ParameterType.IsPrimitive && p.ParameterType != typeof(string)))
-                throw new ArgumentException("The filter parameters must be primitive types or strings.", nameof(filterDelegate));
+            // Ensure the method is static
+            if (!methodInfo.IsStatic || filterDelegate.Target != null)
+                throw new ArgumentException("The filter delegate must be a static method.");
+
+            // Ensure all parameters are simply serializable and not optional
+            if (methodInfo.GetParameters().Skip(1).Any(p => p.IsOptional || !p.ParameterType.IsPrimitive && p.ParameterType != typeof(string)))
+                throw new ArgumentException("The filter parameters must not be optional and must be primitive types or strings.", nameof(filterDelegate));
 
             // Check if this filter is already registered
             string filterName = methodInfo.Name;

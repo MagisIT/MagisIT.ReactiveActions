@@ -18,8 +18,8 @@ namespace MagisIT.ReactiveActions.Tests
         {
             MethodInfo methodInfo = typeof(TestActions).GetMethod(actionMethodName);
             var action = new Action(actionMethodName, (context, descriptor) => Task.FromResult<object>(null), methodInfo, type, resultType, resultModelType);
-            Assert.Equal(action.IsReactive, shouldBeReactive);
-            Assert.Equal(action.IsReactiveCollection, shouldBeReactiveCollection);
+            Assert.Equal(shouldBeReactive, action.IsReactive);
+            Assert.Equal(shouldBeReactiveCollection, action.IsReactiveCollection);
         }
 
         private class TestActions : ActionProviderBase

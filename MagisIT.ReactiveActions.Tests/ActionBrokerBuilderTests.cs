@@ -86,10 +86,10 @@ namespace MagisIT.ReactiveActions.Tests
 
             // Verify action
             Action action = builder.Actions[actionMethodName];
-            Assert.Equal(action.Name, actionMethodName);
-            Assert.Equal(action.Type, expectedType);
-            Assert.Equal(action.ResultType, expectedResultType);
-            Assert.Equal(action.ResultModelType, expectedResultModelType);
+            Assert.Equal(actionMethodName, action.Name);
+            Assert.Equal(expectedType, action.Type);
+            Assert.Equal(expectedResultType, action.ResultType);
+            Assert.Equal(expectedResultModelType, action.ResultModelType);
 
             // Doing it a second time should fail
             Assert.Throws<ArgumentException>(() => builder.AddAction<TestActions>(actionMethodName));
@@ -118,8 +118,8 @@ namespace MagisIT.ReactiveActions.Tests
             Assert.Contains(builder.ModelFilters, f => f.Key == nameof(TestFilters.TestFilter));
 
             ModelFilter filter = builder.ModelFilters[nameof(TestFilters.TestFilter)];
-            Assert.Equal(filter.Name, nameof(TestFilters.TestFilter));
-            Assert.Equal(filter.ModelType, typeof(TestModel));
+            Assert.Equal(nameof(TestFilters.TestFilter), filter.Name);
+            Assert.Equal(typeof(TestModel), filter.ModelType);
 
             Assert.Throws<ArgumentException>(() => builder.AddModelFilter<TestModel, int>(TestFilters.TestFilter));
         }
@@ -132,10 +132,26 @@ namespace MagisIT.ReactiveActions.Tests
         }
 
         [Fact]
+        public void ThrowsIfFilterIsNotStatic()
+        {
+            var nonStaticFilters = new NonStaticTestFilters();
+
+            var builder = new ActionBrokerBuilder(Mock.Of<IServiceProvider>(), Mock.Of<IActionDelegateBuilder>(), Mock.Of<ITrackingSessionStore>());
+            Assert.Throws<ArgumentException>(() => builder.AddModelFilter<TestModel, int>(nonStaticFilters.TestFilter));
+        }
+
+        [Fact]
         public void ThrowsIfFilterParameterIsComplex()
         {
             var builder = new ActionBrokerBuilder(Mock.Of<IServiceProvider>(), Mock.Of<IActionDelegateBuilder>(), Mock.Of<ITrackingSessionStore>());
             Assert.Throws<ArgumentException>(() => builder.AddModelFilter<TestModel, object>(TestFilters.FilterWithComplexParameter));
+        }
+
+        [Fact]
+        public void ThrowsIfFilterParameterIsOptional()
+        {
+            var builder = new ActionBrokerBuilder(Mock.Of<IServiceProvider>(), Mock.Of<IActionDelegateBuilder>(), Mock.Of<ITrackingSessionStore>());
+            Assert.Throws<ArgumentException>(() => builder.AddModelFilter<TestModel, string>(TestFilters.FilterWithOptionalParameter));
         }
 
         private class TestActions : ActionProviderBase
@@ -189,6 +205,13 @@ namespace MagisIT.ReactiveActions.Tests
             public static bool TestFilter(TestModel entity, int id) => entity.Id == id;
 
             public static bool FilterWithComplexParameter(TestModel entity, object someObject) => entity == someObject;
+
+            public static bool FilterWithOptionalParameter(TestModel entity, string someString = null) => entity.Id.ToString() == someString;
+        }
+
+        private class NonStaticTestFilters
+        {
+            public bool TestFilter(TestModel entity, int id) => entity.Id == id;
         }
     }
 }

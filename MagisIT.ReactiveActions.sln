@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MagisIT.ReactiveActions.Tra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarcusW.SharpUtils.Redis", "MarcusW.SharpUtils\MarcusW.SharpUtils.Redis\MarcusW.SharpUtils.Redis.csproj", "{77CBBE53-2BDD-48F1-A591-13627D88BBF3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MagisIT.ReactiveActions.IntegrationTests", "MagisIT.ReactiveActions.IntegrationTests\MagisIT.ReactiveActions.IntegrationTests.csproj", "{6AEF99DE-85E9-49BF-9047-076DC6B7FA76}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,5 +56,9 @@ Global
 		{77CBBE53-2BDD-48F1-A591-13627D88BBF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77CBBE53-2BDD-48F1-A591-13627D88BBF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77CBBE53-2BDD-48F1-A591-13627D88BBF3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6AEF99DE-85E9-49BF-9047-076DC6B7FA76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6AEF99DE-85E9-49BF-9047-076DC6B7FA76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6AEF99DE-85E9-49BF-9047-076DC6B7FA76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6AEF99DE-85E9-49BF-9047-076DC6B7FA76}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
