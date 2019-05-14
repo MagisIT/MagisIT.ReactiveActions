@@ -106,6 +106,18 @@ builder.AddModelFilter<Product, string>(ModelFilters.GetProductByIdFilter);
 builder.AddActionResultUpdateHandler(new ConsoleOutputUpdateHandler());
 
 IActionBroker actionBroker = builder.Build();
+
+// Get all products as tracking session "User1" and watch for updates
+ICollection<Product> products = await actionBroker.InvokeAndTrackActionAsync<ICollection<Product>>("User1", nameof(ProductActions.GetProductsAsync)).ConfigureAwait(false);
+
+// Add a product to the database. "User1" will be notified of this.
+await _actionBroker.InvokeActionAsync(nameof(ProductActions.AddProductAsync),
+                                      new AddProductActionDescriptor {
+                                          Id = "cookies",
+                                          Name = "Cookies",
+                                          Price = 4,
+                                          AvailableAmount = 7
+                                      }).ConfigureAwait(false);
 ```
 
 Please also take a look into the sample projekt for more information: [Sample](https://github.com/MagisIT/MagisIT.ReactiveActions/tree/master/MagisIT.ReactiveActions.Sample)
