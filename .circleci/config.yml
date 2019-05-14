@@ -3,6 +3,7 @@ jobs:
   test:
     docker:
       - image: mcr.microsoft.com/dotnet/core/sdk:2.2
+      - image: redis:latest
     steps:
       - checkout
       - run: git submodule sync
