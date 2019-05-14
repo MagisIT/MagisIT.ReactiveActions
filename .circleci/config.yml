@@ -1,0 +1,38 @@
+version: 2.1
+jobs:
+  test:
+    docker:
+      - image: mcr.microsoft.com/dotnet/core/sdk:2.2
+    steps:
+      - checkout
+      - run: dotnet restore
+      - run: dotnet build
+      - run: dotnet test
+  deploy:
+    docker:
+      - image: mcr.microsoft.com/dotnet/core/sdk:2.2
+    steps:
+      - checkout
+      - run: dotnet build -c Release
+      - run: dotnet pack MagisIT.ReactiveActions/MagisIT.ReactiveActions.csproj -c Release
+      - run: dotnet pack MagisIT.ReactiveActions.TrackingSessionStore.InMemoroy/MagisIT.ReactiveActions.TrackingSessionStore.InMemoroy.csproj -c Release
+      - run: dotnet pack MagisIT.ReactiveActions.TrackingSessionStore.Redis/MagisIT.ReactiveActions.TrackingSessionStore.Redis.csproj -c Release
+      - deploy:
+          name: Push to nuget.org
+          command: find . -name '*.nupkg' -exec dotnet nuget push {} -k $NUGET_KEY -s https://nuget.org \;
+workflows:
+  version: 2
+  test_and_deploy:
+    jobs:
+      - test:
+          filters:
+            tags:
+              only: /.*/
+      - deploy:
+          requires:
+            - test
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
