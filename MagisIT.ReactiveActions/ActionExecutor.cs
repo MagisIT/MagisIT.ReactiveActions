@@ -31,28 +31,37 @@ namespace MagisIT.ReactiveActions
             _trackingSessionStore = trackingSessionStore ?? throw new ArgumentNullException(nameof(trackingSessionStore));
         }
 
-        public Task<object> InvokeActionAsync(string name, IActionDescriptor actionDescriptor = null, string trackingSession = null) =>
-            InternalInvokeRootActionAsync(name, actionDescriptor, trackingSession);
+        public Task<object> InvokeActionAsync(string name, IActionDescriptor actionDescriptor = null, IActionArguments actionArguments = null, string trackingSession = null) =>
+            InternalInvokeRootActionAsync(name, actionDescriptor, actionArguments, trackingSession);
 
-        public async Task<TResult> InvokeActionAsync<TResult>(string name, IActionDescriptor actionDescriptor = null, string trackingSession = null)
+        public async Task<TResult> InvokeActionAsync<TResult>(string name,
+                                                              IActionDescriptor actionDescriptor = null,
+                                                              IActionArguments actionArguments = null,
+                                                              string trackingSession = null)
         {
-            return (TResult)await InternalInvokeRootActionAsync(name, actionDescriptor, trackingSession).ConfigureAwait(false);
+            return (TResult)await InternalInvokeRootActionAsync(name, actionDescriptor, actionArguments, trackingSession).ConfigureAwait(false);
         }
 
-        public Task<object> InvokeSubActionAsync(IExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
+        public Task<object> InvokeSubActionAsync(IExecutionContext currentExecutionContext,
+                                                 string name,
+                                                 IActionDescriptor actionDescriptor = null,
+                                                 IActionArguments actionArguments = null)
         {
             if (currentExecutionContext == null)
                 throw new ArgumentNullException(nameof(currentExecutionContext));
 
-            return InternalInvokeSubActionAsync(currentExecutionContext, name, actionDescriptor);
+            return InternalInvokeSubActionAsync(currentExecutionContext, name, actionDescriptor, actionArguments);
         }
 
-        public async Task<TResult> InvokeSubActionAsync<TResult>(IExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
+        public async Task<TResult> InvokeSubActionAsync<TResult>(IExecutionContext currentExecutionContext,
+                                                                 string name,
+                                                                 IActionDescriptor actionDescriptor = null,
+                                                                 IActionArguments actionArguments = null)
         {
             if (currentExecutionContext == null)
                 throw new ArgumentNullException(nameof(currentExecutionContext));
 
-            return (TResult)await InternalInvokeSubActionAsync(currentExecutionContext, name, actionDescriptor).ConfigureAwait(false);
+            return (TResult)await InternalInvokeSubActionAsync(currentExecutionContext, name, actionDescriptor, actionArguments).ConfigureAwait(false);
         }
 
         public ModelFilter GetModelFilter(string name)
@@ -144,7 +153,10 @@ namespace MagisIT.ReactiveActions
             })).ConfigureAwait(false);
         }
 
-        private async Task<object> InternalInvokeRootActionAsync(string name, IActionDescriptor actionDescriptor = null, string trackingSession = null)
+        private async Task<object> InternalInvokeRootActionAsync(string name,
+                                                                 IActionDescriptor actionDescriptor = null,
+                                                                 IActionArguments actionArguments = null,
+                                                                 string trackingSession = null)
         {
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
@@ -160,7 +172,7 @@ namespace MagisIT.ReactiveActions
             // Create root level of the execution tree
             IExecutionContext executionContext = ExecutionContext.CreateRootContext(this, action, trackingSession);
 
-            object result = await action.ExecuteAsync(executionContext, actionDescriptor).ConfigureAwait(false);
+            object result = await action.ExecuteAsync(executionContext, actionDescriptor, actionArguments).ConfigureAwait(false);
 
             // Store tracked data queries of action call
             if (trackingEnabled)
@@ -169,7 +181,10 @@ namespace MagisIT.ReactiveActions
             return result;
         }
 
-        private Task<object> InternalInvokeSubActionAsync(IExecutionContext currentExecutionContext, string name, IActionDescriptor actionDescriptor = null)
+        private Task<object> InternalInvokeSubActionAsync(IExecutionContext currentExecutionContext,
+                                                          string name,
+                                                          IActionDescriptor actionDescriptor = null,
+                                                          IActionArguments actionArguments = null)
         {
             if (currentExecutionContext == null)
                 throw new ArgumentNullException(nameof(currentExecutionContext));
@@ -182,7 +197,7 @@ namespace MagisIT.ReactiveActions
             Action action = _actions[name];
             IExecutionContext nextExecutionContext = currentExecutionContext.CreateSubContext(action);
 
-            return action.ExecuteAsync(nextExecutionContext, actionDescriptor);
+            return action.ExecuteAsync(nextExecutionContext, actionDescriptor, actionArguments);
         }
 
         private Task StoreExecutionAsync(IExecutionContext rootContext, IActionDescriptor actionDescriptor = null)
@@ -215,12 +230,7 @@ namespace MagisIT.ReactiveActions
                     ModelTypeName = filter.ModelFilter.ModelType.Name,
                     FilterName = filter.ModelFilter.Name,
                     FilterParams = filter.FilterParams,
-                    AffectedActionCalls = new[] {
-                        new ActionCallReference {
-                            ActionCallId = actionCall.Id,
-                            Direct = context == rootContext
-                        }
-                    }
+                    AffectedActionCalls = new[] { new ActionCallReference { ActionCallId = actionCall.Id, Direct = context == rootContext } }
                 }));
 
                 foreach (IExecutionContext subContext in context.SubContexts)

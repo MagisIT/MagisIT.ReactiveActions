@@ -27,23 +27,37 @@ namespace MagisIT.ReactiveActions.ActionCreation
         private ActionDelegate BuildActionDelegate(IServiceProvider serviceProvider, Type actionProviderType, MethodInfo actionMethod, ParameterInfo[] methodParameters)
         {
             // TODO: Add further runtime optimizations
-            return async (executionContext, actionDescriptor) => {
+            return async (executionContext, actionDescriptor, actionArguments) => {
                 if (executionContext == null)
                     throw new ArgumentNullException(nameof(executionContext));
 
                 // Analyse required method parameters
                 var paramValues = new List<object>();
-                bool actionDescriptionUsed = false;
+                bool actionDescriptorUsed = false;
+                bool actionArgumentsUsed = false;
                 foreach (ParameterInfo parameter in methodParameters)
                 {
-                    // Resolve action description parameter
+                    // Resolve action descriptor parameter
                     if (typeof(IActionDescriptor).IsAssignableFrom(parameter.ParameterType))
                     {
                         if (actionDescriptor == null)
                             throw new ArgumentNullException(nameof(actionDescriptor), "No action descriptor given.");
                         if (!parameter.ParameterType.IsInstanceOfType(actionDescriptor))
                             throw new ArgumentException("Given action descriptor is of an invalid type.", nameof(actionDescriptor));
-                        actionDescriptionUsed = true;
+                        actionDescriptorUsed = true;
+
+                        paramValues.Add(actionDescriptor);
+                        continue;
+                    }
+
+                    // Resolve action arguments parameter
+                    if (typeof(IActionArguments).IsAssignableFrom(parameter.ParameterType))
+                    {
+                        if (actionArguments == null)
+                            throw new ArgumentNullException(nameof(actionArguments), "No action arguments given.");
+                        if (!parameter.ParameterType.IsInstanceOfType(actionArguments))
+                            throw new ArgumentException("Given action arguments object is of an invalid type.", nameof(actionArguments));
+                        actionArgumentsUsed = true;
 
                         paramValues.Add(actionDescriptor);
                         continue;
@@ -68,8 +82,10 @@ namespace MagisIT.ReactiveActions.ActionCreation
                     throw new InvalidOperationException($"Method parameter {parameter.Name} is of an unknown type and cannot be resolved.");
                 }
 
-                if (!actionDescriptionUsed && actionDescriptor != null)
+                if (!actionDescriptorUsed && actionDescriptor != null)
                     throw new ArgumentException("This action doesn't expect an action descriptor.", nameof(actionDescriptor));
+                if (!actionArgumentsUsed && actionArguments != null)
+                    throw new ArgumentException("This action doesn't expect action arguments.", nameof(actionArguments));
 
                 // Create action provider instance
                 object actionProvider = Activator.CreateInstance(actionProviderType);

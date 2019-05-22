@@ -6,7 +6,7 @@ using MagisIT.ReactiveActions.Reactivity;
 
 namespace MagisIT.ReactiveActions
 {
-    public delegate Task<object> ActionDelegate(IExecutionContext executionContext, IActionDescriptor actionDescriptor = null);
+    public delegate Task<object> ActionDelegate(IExecutionContext executionContext, IActionDescriptor actionDescriptor = null, IActionArguments actionArguments = null);
 
     [Flags]
     public enum ActionType
@@ -54,17 +54,17 @@ namespace MagisIT.ReactiveActions
             }
         }
 
-        public Task<object> ExecuteAsync(IExecutionContext executionContext, IActionDescriptor actionDescriptor = null)
+        public Task<object> ExecuteAsync(IExecutionContext executionContext, IActionDescriptor actionDescriptor = null, IActionArguments actionArguments = null)
         {
             if (executionContext == null)
                 throw new ArgumentNullException(nameof(executionContext));
 
-            return ActionDelegate.Invoke(executionContext, actionDescriptor);
+            return ActionDelegate.Invoke(executionContext, actionDescriptor, actionArguments);
         }
 
-        public async Task<TResult> ExecuteAsync<TResult>(IExecutionContext executionContext, IActionDescriptor actionDescriptor = null)
+        public async Task<TResult> ExecuteAsync<TResult>(IExecutionContext executionContext, IActionDescriptor actionDescriptor = null, IActionArguments actionArguments = null)
         {
-            return (TResult)await ExecuteAsync(executionContext, actionDescriptor).ConfigureAwait(false);
+            return (TResult)await ExecuteAsync(executionContext, actionDescriptor, actionArguments).ConfigureAwait(false);
         }
     }
 }

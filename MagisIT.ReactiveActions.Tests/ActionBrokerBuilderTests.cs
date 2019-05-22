@@ -73,7 +73,7 @@ namespace MagisIT.ReactiveActions.Tests
 
             Expression<Func<IActionDelegateBuilder, ActionDelegate>> expectedBuilderInvocation = actionDelegateBuilder =>
                 actionDelegateBuilder.BuildActionDelegate(serviceProvider, typeof(TestActions), It.Is<MethodInfo>(info => info.Name == actionMethodName));
-            actionDelegateBuilderMock.Setup(expectedBuilderInvocation).Returns((executionContext, actionDescriptor) => Task.FromResult<object>(null));
+            actionDelegateBuilderMock.Setup(expectedBuilderInvocation).Returns((executionContext, actionDescriptor, actionArguments) => Task.FromResult<object>(null));
 
             var builder = new ActionBrokerBuilder(serviceProvider, actionDelegateBuilderMock.Object, Mock.Of<ITrackingSessionStore>());
 

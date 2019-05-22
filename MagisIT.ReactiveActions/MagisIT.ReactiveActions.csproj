@@ -4,10 +4,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
-  <Import Project="../ProjectProperties.targets"/>
+  <Import Project="../ProjectProperties.targets" />
 
   <ItemGroup>
-    <ProjectReference Include="..\MarcusW.SharpUtils\MarcusW.SharpUtils.Core\MarcusW.SharpUtils.Core.csproj"/>
+    <ProjectReference Include="..\MarcusW.SharpUtils\MarcusW.SharpUtils.Core\MarcusW.SharpUtils.Core.csproj" />
   </ItemGroup>
 
 </Project>

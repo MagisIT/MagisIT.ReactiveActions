@@ -11,20 +11,20 @@ namespace MagisIT.ReactiveActions.Helpers
     {
         public IExecutionContext ExecutionContext { get; set; }
 
-        protected Task<object> InvokeActionAsync(string name, IActionDescriptor actionDescriptor = null)
+        protected Task<object> InvokeActionAsync(string name, IActionDescriptor actionDescriptor = null, IActionArguments actionArguments = null)
         {
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
 
-            return ExecutionContext.ActionExecutor.InvokeSubActionAsync(ExecutionContext, name, actionDescriptor);
+            return ExecutionContext.ActionExecutor.InvokeSubActionAsync(ExecutionContext, name, actionDescriptor, actionArguments);
         }
 
-        protected Task<TResult> InvokeActionAsync<TResult>(string name, IActionDescriptor actionDescriptor = null)
+        protected Task<TResult> InvokeActionAsync<TResult>(string name, IActionDescriptor actionDescriptor = null, IActionArguments actionArguments = null)
         {
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
 
-            return ExecutionContext.ActionExecutor.InvokeSubActionAsync<TResult>(ExecutionContext, name, actionDescriptor);
+            return ExecutionContext.ActionExecutor.InvokeSubActionAsync<TResult>(ExecutionContext, name, actionDescriptor, actionArguments);
         }
 
         protected void TrackDataQuery<TModel>(string modelFilterName, params object[] filterParams) where TModel : class

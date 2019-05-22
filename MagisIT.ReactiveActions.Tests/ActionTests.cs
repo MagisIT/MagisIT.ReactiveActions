@@ -17,7 +17,7 @@ namespace MagisIT.ReactiveActions.Tests
         public void InterpretsTypeCorrectly(string actionMethodName, ActionType type, Type resultType, Type resultModelType, bool shouldBeReactive, bool shouldBeReactiveCollection)
         {
             MethodInfo methodInfo = typeof(TestActions).GetMethod(actionMethodName);
-            var action = new Action(actionMethodName, (context, descriptor) => Task.FromResult<object>(null), methodInfo, type, resultType, resultModelType);
+            var action = new Action(actionMethodName, (context, descriptor, arguments) => Task.FromResult<object>(null), methodInfo, type, resultType, resultModelType);
             Assert.Equal(shouldBeReactive, action.IsReactive);
             Assert.Equal(shouldBeReactiveCollection, action.IsReactiveCollection);
         }
