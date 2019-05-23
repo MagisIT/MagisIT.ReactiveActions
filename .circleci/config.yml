@@ -21,7 +21,7 @@ jobs:
       - run: dotnet restore
       - run: dotnet build -c Release
       - run: dotnet pack MagisIT.ReactiveActions/MagisIT.ReactiveActions.csproj -c Release
-      - run: dotnet pack MagisIT.ReactiveActions.TrackingSessionStore.InMemoroy/MagisIT.ReactiveActions.TrackingSessionStore.InMemoroy.csproj -c Release
+      - run: dotnet pack MagisIT.ReactiveActions.TrackingSessionStore.InMemory/MagisIT.ReactiveActions.TrackingSessionStore.InMemory.csproj -c Release
       - run: dotnet pack MagisIT.ReactiveActions.TrackingSessionStore.Redis/MagisIT.ReactiveActions.TrackingSessionStore.Redis.csproj -c Release
       - deploy:
           name: Push to nuget.org
