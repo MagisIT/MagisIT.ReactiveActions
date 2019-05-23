@@ -16,6 +16,9 @@ jobs:
       - image: mcr.microsoft.com/dotnet/core/sdk:2.2
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
+      - run: dotnet restore
       - run: dotnet build -c Release
       - run: dotnet pack MagisIT.ReactiveActions/MagisIT.ReactiveActions.csproj -c Release
       - run: dotnet pack MagisIT.ReactiveActions.TrackingSessionStore.InMemoroy/MagisIT.ReactiveActions.TrackingSessionStore.InMemoroy.csproj -c Release
