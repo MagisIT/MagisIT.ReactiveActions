@@ -63,7 +63,7 @@ namespace MagisIT.ReactiveActions.Tests
         }
 
         [Theory]
-        [InlineData(nameof(TestActions.SimpleActionAsync), ActionType.Default, null, null)]
+        [InlineData(nameof(TestActions.SimpleActionAsync), ActionType.Default, typeof(bool), typeof(bool))]
         [InlineData(nameof(TestActions.ReactiveActionAsync), ActionType.Reactive, typeof(TestModel), typeof(TestModel))]
         [InlineData(nameof(TestActions.ReactiveCollectionActionAsync), ActionType.ReactiveCollection, typeof(ICollection<TestModel>), typeof(TestModel))]
         public void RegistersActionMethodOnce(string actionMethodName, ActionType expectedType, Type expectedResultType, Type expectedResultModelType)
@@ -157,9 +157,9 @@ namespace MagisIT.ReactiveActions.Tests
         private class TestActions : ActionProviderBase
         {
             [Action]
-            public Task SimpleActionAsync()
+            public Task<bool> SimpleActionAsync()
             {
-                return Task.CompletedTask;
+                return Task.FromResult(true);
             }
 
             [Action, Reactive]

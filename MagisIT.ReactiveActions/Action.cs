@@ -44,14 +44,13 @@ namespace MagisIT.ReactiveActions
                 throw new InvalidEnumArgumentException(nameof(type), (int)type, typeof(ActionType));
             Type = type;
 
-            if (IsReactive)
-            {
-                ResultModelType = ResultType = resultType ?? throw new ArgumentException("The result type of reactive actions must be known.", nameof(resultType));
+            ResultType = resultType;
+            ResultModelType = resultModelType;
 
-                if (IsReactiveCollection)
-                    ResultModelType = resultModelType
-                                      ?? throw new ArgumentException("The result model type of reactive-collection actions must be known.", nameof(resultModelType));
-            }
+            if (IsReactive && (ResultType == null || ResultModelType == null))
+                throw new ArgumentException("The result type of reactive actions must be known.", nameof(resultType));
+            if (IsReactiveCollection && ResultModelType == ResultType)
+                throw new ArgumentException("The result model type of reactive-collection actions must not be equal to the result type.", nameof(resultModelType));
         }
 
         public Task<object> ExecuteAsync(IExecutionContext executionContext, IActionDescriptor actionDescriptor = null, IActionArguments actionArguments = null)

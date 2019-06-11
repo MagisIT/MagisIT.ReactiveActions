@@ -100,10 +100,11 @@ namespace MagisIT.ReactiveActions
             }
             else
             {
-                // We know it's a task. Now check, that's it not an Task<> or something
-                if (returnType != typeof(Task))
-                    throw new ArgumentException($"Non-reactive action methods must not return a result: {actionMethodName}", nameof(actionMethodName));
-                resultModelType = resultType = null;
+                // Get optional result type
+                if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+                    resultModelType = resultType = returnType.GenericTypeArguments[0];
+                else
+                    resultModelType = resultType = null;
             }
 
             // The result model should be a simple class, not a collection or something like that

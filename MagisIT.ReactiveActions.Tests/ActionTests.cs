@@ -12,6 +12,7 @@ namespace MagisIT.ReactiveActions.Tests
     {
         [Theory]
         [InlineData(nameof(TestActions.SimpleActionAsync), ActionType.Default, null, null, false, false)]
+        [InlineData(nameof(TestActions.SimpleActionWithResultAsync), ActionType.Default, typeof(int), typeof(int), false, false)]
         [InlineData(nameof(TestActions.ReactiveActionAsync), ActionType.Reactive, typeof(TestModel), typeof(TestModel), true, false)]
         [InlineData(nameof(TestActions.ReactiveCollectionActionAsync), ActionType.ReactiveCollection, typeof(ICollection<TestModel>), typeof(TestModel), true, true)]
         public void InterpretsTypeCorrectly(string actionMethodName, ActionType type, Type resultType, Type resultModelType, bool shouldBeReactive, bool shouldBeReactiveCollection)
@@ -28,6 +29,12 @@ namespace MagisIT.ReactiveActions.Tests
             public Task SimpleActionAsync()
             {
                 return Task.CompletedTask;
+            }
+
+            [Action]
+            public Task<int> SimpleActionWithResultAsync()
+            {
+                return Task.FromResult(42);
             }
 
             [Action, Reactive]
