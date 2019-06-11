@@ -59,7 +59,7 @@ namespace MagisIT.ReactiveActions.ActionCreation
                             throw new ArgumentException("Given action arguments object is of an invalid type.", nameof(actionArguments));
                         actionArgumentsUsed = true;
 
-                        paramValues.Add(actionDescriptor);
+                        paramValues.Add(actionArguments);
                         continue;
                     }
 
