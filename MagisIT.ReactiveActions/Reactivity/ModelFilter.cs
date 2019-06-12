@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 
 namespace MagisIT.ReactiveActions.Reactivity
 {
@@ -74,8 +75,17 @@ namespace MagisIT.ReactiveActions.Reactivity
             if (!CanFilterModelType(typeof(TModel)))
                 throw new ArgumentException("Model type is incompatible to this model filter.", nameof(TModel));
 
-            // The check for parameter types is skipped for performance reasons. The following call will throw exceptions anyway.
-            return _matchDelegate.Invoke(entity, filterParams);
+            try
+            {
+                // The check for parameter types is skipped for performance reasons. The following call will throw exceptions anyway.
+                return _matchDelegate.Invoke(entity, filterParams);
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException != null)
+            {
+                // Unwrap exceptions
+                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                return false;
+            }
         }
 
         private void BuildParameterCheckDelegate(ParameterInfo[] requiredParameters)

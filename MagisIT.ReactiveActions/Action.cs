@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using MagisIT.ReactiveActions.Reactivity;
 
@@ -53,12 +54,21 @@ namespace MagisIT.ReactiveActions
                 throw new ArgumentException("The result model type of reactive-collection actions must not be equal to the result type.", nameof(resultModelType));
         }
 
-        public Task<object> ExecuteAsync(IExecutionContext executionContext, IActionDescriptor actionDescriptor = null, IActionArguments actionArguments = null)
+        public async Task<object> ExecuteAsync(IExecutionContext executionContext, IActionDescriptor actionDescriptor = null, IActionArguments actionArguments = null)
         {
             if (executionContext == null)
                 throw new ArgumentNullException(nameof(executionContext));
 
-            return ActionDelegate.Invoke(executionContext, actionDescriptor, actionArguments);
+            try
+            {
+                return await ActionDelegate.Invoke(executionContext, actionDescriptor, actionArguments).ConfigureAwait(false);
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException != null)
+            {
+                // Unwrap exceptions
+                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                return null;
+            }
         }
 
         public async Task<TResult> ExecuteAsync<TResult>(IExecutionContext executionContext, IActionDescriptor actionDescriptor = null, IActionArguments actionArguments = null)
