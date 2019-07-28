@@ -11,7 +11,7 @@ local data_query_session_prefix = data_queries_set_key .. ":" .. session_name ..
 local data_query_keys = redis.call("SMEMBERS", data_queries_set_key)
 for i, data_query_key in ipairs(data_query_keys) do
     -- Is it dedicated to the current session?
-    if data_query_key:sub(1, #data_query_session_prefix) == start data_query_session_prefix then
+    if data_query_key:sub(1, #data_query_session_prefix) == data_query_session_prefix then
         -- Get data query
         local data_query_json = redis.call("GET", data_query_key)
         if data_query_json then
@@ -33,7 +33,7 @@ local action_call_session_prefix = action_calls_set_key .. ":" .. session_name .
 local action_call_keys = redis.call("SMEMBERS", data_queries_set_key)
 for i, action_call_key in ipairs(data_query_keys) do
     -- Is it dedicated to the current session?
-    if action_call_key:sub(1, #action_call_session_prefix) == start action_call_session_prefix then
+    if action_call_key:sub(1, #action_call_session_prefix) == action_call_session_prefix then
         -- Delete action call entry and references set
         redis.call("DEL", action_call_key)
         redis.call("DEL", action_call_key .. ":refs")
