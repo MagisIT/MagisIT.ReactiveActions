@@ -33,9 +33,9 @@ if existing_json then
 
         -- Does one exist?
         if existing then
-            -- Just keep it, but favour indirect references
-            if not ref["Direct"] then
-                existing["Direct"] = false
+            -- Just keep it, but favour references that are not marked as result source
+            if not ref["IsResultSource"] then
+                existing["IsResultSource"] = false
             end
         else
             -- Add the new reference
