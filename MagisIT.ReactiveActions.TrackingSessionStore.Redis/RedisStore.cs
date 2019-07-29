@@ -241,7 +241,7 @@ namespace MagisIT.ReactiveActions.TrackingSessionStore.Redis
                                                          ActionCallsSetKey = (RedisKey)ActionCallsBaseKey,
                                                          DataQueriesSetKey = (RedisKey)DataQueriesBaseKey,
                                                          ModelTypesBaseKey = (RedisKey)ModelTypesBaseKey,
-                                                         SesionName = trackingSession
+                                                         SessionName = trackingSession
                                                      }).ConfigureAwait(false);
         }
 

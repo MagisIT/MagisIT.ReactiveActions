@@ -5,6 +5,8 @@ namespace MagisIT.ReactiveActions.IntegrationTests.TestFixtures
 {
     public class RedisConnectionFixture
     {
+        public const string TestKeysPrefix = "integration-tests";
+
         public ConnectionMultiplexer Connection { get; }
 
         public IDatabase Database => Connection.GetDatabase();
