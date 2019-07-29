@@ -11,14 +11,14 @@ namespace MagisIT.ReactiveActions.Tests
     public class ActionTests
     {
         [Theory]
-        [InlineData(nameof(TestActions.SimpleActionAsync), ActionType.Default, null, null, false, false)]
-        [InlineData(nameof(TestActions.SimpleActionWithResultAsync), ActionType.Default, typeof(int), typeof(int), false, false)]
-        [InlineData(nameof(TestActions.ReactiveActionAsync), ActionType.Reactive, typeof(TestModel), typeof(TestModel), true, false)]
-        [InlineData(nameof(TestActions.ReactiveCollectionActionAsync), ActionType.ReactiveCollection, typeof(ICollection<TestModel>), typeof(TestModel), true, true)]
-        public void InterpretsTypeCorrectly(string actionMethodName, ActionType type, Type resultType, Type resultModelType, bool shouldBeReactive, bool shouldBeReactiveCollection)
+        [InlineData(nameof(TestActions.SimpleActionAsync), ActionType.Default, null, false, false)]
+        [InlineData(nameof(TestActions.SimpleActionWithResultAsync), ActionType.Default, typeof(int), false, false)]
+        [InlineData(nameof(TestActions.ReactiveActionAsync), ActionType.Reactive, typeof(TestModel), true, false)]
+        [InlineData(nameof(TestActions.ReactiveCollectionActionAsync), ActionType.ReactiveCollection, typeof(ICollection<TestModel>), true, true)]
+        public void InterpretsTypeCorrectly(string actionMethodName, ActionType type, Type resultType, bool shouldBeReactive, bool shouldBeReactiveCollection)
         {
             MethodInfo methodInfo = typeof(TestActions).GetMethod(actionMethodName);
-            var action = new Action(actionMethodName, (context, descriptor, arguments) => Task.FromResult<object>(null), methodInfo, type, resultType, resultModelType);
+            var action = new Action(actionMethodName, (context, descriptor, arguments) => Task.FromResult<object>(null), methodInfo, type, resultType);
             Assert.Equal(shouldBeReactive, action.IsReactive);
             Assert.Equal(shouldBeReactiveCollection, action.IsReactiveCollection);
         }

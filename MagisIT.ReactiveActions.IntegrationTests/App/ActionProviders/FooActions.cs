@@ -13,19 +13,19 @@ namespace MagisIT.ReactiveActions.IntegrationTests.App.ActionProviders
         [Action, Reactive]
         public Task<Foo> GetFooByIdAsync(IDataSource dataSource, GetFooByIdActionDescriptor actionDescriptor)
         {
-            Foo foo = TrackEntityQuery(dataSource.Foos.FirstOrDefault(f => f.Id == actionDescriptor.Id), nameof(ModelFilters.GetFooByIdFilter), actionDescriptor.Id);
+            Foo foo = TrackEntityQuery(true, dataSource.Foos.FirstOrDefault(f => f.Id == actionDescriptor.Id), nameof(ModelFilters.GetFooByIdFilter), actionDescriptor.Id);
             return Task.FromResult(foo);
         }
 
         [Action]
-        public async Task SetFooNameAsync(IDataSource dataSource, SetFooNameActionDescriptor actionDescriptor)
+        public Task SetFooNameAsync(IDataSource dataSource, SetFooNameActionDescriptor actionDescriptor)
         {
             Foo foo = dataSource.Foos.FirstOrDefault(f => f.Id == actionDescriptor.FooId)
                       ?? throw new ArgumentException($"Foo {actionDescriptor.FooId} does not exist", nameof(actionDescriptor));
 
             Foo previousFoo = foo.ShallowCopy();
             foo.Name = actionDescriptor.Name;
-            await TrackEntityChangedAsync(previousFoo, foo).ConfigureAwait(false);
+            return TrackEntityChangedAsync(previousFoo, foo);
         }
     }
 }

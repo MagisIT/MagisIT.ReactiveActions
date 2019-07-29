@@ -19,7 +19,7 @@ namespace MagisIT.ReactiveActions.Reactivity
 
         public IList<IExecutionContext> SubContexts { get; } = new List<IExecutionContext>();
 
-        public IList<ParameterizedModelFilter> DataQueries { get; } = new List<ParameterizedModelFilter>();
+        public IList<(ParameterizedModelFilter filter, bool isResultSource)> DataQueries { get; } = new List<(ParameterizedModelFilter filter, bool isResultSource)>();
 
         private ExecutionContext(IActionExecutor actionExecutor, Action action, string trackingSession = null)
         {
@@ -35,7 +35,7 @@ namespace MagisIT.ReactiveActions.Reactivity
             TrackingSession = parentContext.TrackingSession;
         }
 
-        public void RegisterDataQuery(ModelFilter modelFilter, object[] filterParams)
+        public void RegisterDataQuery(bool isResultSource, ModelFilter modelFilter, object[] filterParams)
         {
             if (modelFilter == null)
                 throw new ArgumentNullException(nameof(modelFilter));
@@ -50,7 +50,7 @@ namespace MagisIT.ReactiveActions.Reactivity
             if (!modelFilter.AcceptsParameters(filterParams))
                 throw new ArgumentException("The model filter doesn't accept the specified filter parameters.");
 
-            DataQueries.Add(new ParameterizedModelFilter(modelFilter, filterParams));
+            DataQueries.Add((new ParameterizedModelFilter(modelFilter, filterParams), isResultSource));
         }
 
         public IExecutionContext CreateSubContext(Action action)

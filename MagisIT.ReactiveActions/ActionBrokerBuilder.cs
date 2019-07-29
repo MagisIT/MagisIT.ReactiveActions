@@ -76,40 +76,19 @@ namespace MagisIT.ReactiveActions
             if (!typeof(Task).IsAssignableFrom(returnType))
                 throw new ArgumentException($"Action method {actionMethodName} does not return a task.", nameof(actionMethodName));
 
-            // Get result type based on action type
-            Type resultType, resultModelType;
+            // Get action result
+            Type resultType = returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>) ? returnType.GenericTypeArguments[0] : null;
+
+            // Check that reactive actions have a result
             if (actionType.HasFlag(ActionType.Reactive))
             {
-                if (!returnType.IsGenericType || returnType.GetGenericTypeDefinition() != typeof(Task<>))
+                if (resultType == null)
                     throw new ArgumentException($"Reactive actions need to return a result: {actionMethodName}", nameof(actionMethodName));
-                resultType = returnType.GenericTypeArguments[0];
 
-                // Is the result a collection of models?
-                if (actionType.HasFlag(ActionType.ReactiveCollection))
-                {
-                    // Result should be a collection of entities
-                    if (!typeof(ICollection<>).IsGenericTypeDefinitionAssignableFrom(resultType))
-                        throw new ArgumentException($"Reactive collection actions need to return a collection of entities: {actionMethodName}", nameof(actionMethodName));
-                    resultModelType = resultType.GenericTypeArguments[0];
-                }
-                else
-                {
-                    // The result should be one single entity (will be checked later)
-                    resultModelType = resultType;
-                }
+                // Check that reactive collections have a collection result
+                if (actionType.HasFlag(ActionType.ReactiveCollection) && !typeof(ICollection<>).IsGenericTypeDefinitionAssignableFrom(resultType))
+                    throw new ArgumentException($"Reactive collection actions need to return a collection of entities: {actionMethodName}", nameof(actionMethodName));
             }
-            else
-            {
-                // Get optional result type
-                if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
-                    resultModelType = resultType = returnType.GenericTypeArguments[0];
-                else
-                    resultModelType = resultType = null;
-            }
-
-            // The result model should be a simple class, not a collection or something like that
-            if (resultModelType != null && ((!resultModelType.IsClass && !resultModelType.IsPrimitive) || resultModelType.IsGenericType))
-                throw new ArgumentException($"Reactive actions should return simple non-generic objects or collections of them: {actionMethodName}", nameof(actionMethod));
 
             // Construct action delegate
             ActionDelegate actionDelegate = _actionDelegateBuilder.BuildActionDelegate(_serviceProvider, actionProviderType, actionMethod);
@@ -117,7 +96,7 @@ namespace MagisIT.ReactiveActions
                 throw new InvalidOperationException("Built action delegate must not be null.");
 
             // Create a new action
-            var action = new Action(actionMethodName, actionDelegate, actionMethod, actionType, resultType, resultModelType);
+            var action = new Action(actionMethodName, actionDelegate, actionMethod, actionType, resultType);
 
             // Register action
             Actions.Add(actionMethodName, action);

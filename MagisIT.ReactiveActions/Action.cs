@@ -29,13 +29,11 @@ namespace MagisIT.ReactiveActions
 
         public Type ResultType { get; }
 
-        public Type ResultModelType { get; }
-
         public bool IsReactive => Type.HasFlag(ActionType.Reactive);
 
         public bool IsReactiveCollection => Type.HasFlag(ActionType.ReactiveCollection);
 
-        public Action(string name, ActionDelegate actionDelegate, MethodInfo actionMethodInfo, ActionType type, Type resultType, Type resultModelType)
+        public Action(string name, ActionDelegate actionDelegate, MethodInfo actionMethodInfo, ActionType type, Type resultType)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             ActionDelegate = actionDelegate ?? throw new ArgumentNullException(nameof(actionDelegate));
@@ -46,12 +44,9 @@ namespace MagisIT.ReactiveActions
             Type = type;
 
             ResultType = resultType;
-            ResultModelType = resultModelType;
 
-            if (IsReactive && (ResultType == null || ResultModelType == null))
+            if (IsReactive && ResultType == null)
                 throw new ArgumentException("The result type of reactive actions must be known.", nameof(resultType));
-            if (IsReactiveCollection && ResultModelType == ResultType)
-                throw new ArgumentException("The result model type of reactive-collection actions must not be equal to the result type.", nameof(resultModelType));
         }
 
         public async Task<object> ExecuteAsync(IExecutionContext executionContext, IActionDescriptor actionDescriptor = null, IActionArguments actionArguments = null)

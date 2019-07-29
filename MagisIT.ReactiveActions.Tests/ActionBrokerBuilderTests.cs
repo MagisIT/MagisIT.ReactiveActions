@@ -63,10 +63,10 @@ namespace MagisIT.ReactiveActions.Tests
         }
 
         [Theory]
-        [InlineData(nameof(TestActions.SimpleActionAsync), ActionType.Default, typeof(bool), typeof(bool))]
-        [InlineData(nameof(TestActions.ReactiveActionAsync), ActionType.Reactive, typeof(TestModel), typeof(TestModel))]
-        [InlineData(nameof(TestActions.ReactiveCollectionActionAsync), ActionType.ReactiveCollection, typeof(ICollection<TestModel>), typeof(TestModel))]
-        public void RegistersActionMethodOnce(string actionMethodName, ActionType expectedType, Type expectedResultType, Type expectedResultModelType)
+        [InlineData(nameof(TestActions.SimpleActionAsync), ActionType.Default, typeof(bool))]
+        [InlineData(nameof(TestActions.ReactiveActionAsync), ActionType.Reactive, typeof(TestModel))]
+        [InlineData(nameof(TestActions.ReactiveCollectionActionAsync), ActionType.ReactiveCollection, typeof(ICollection<TestModel>))]
+        public void RegistersActionMethodOnce(string actionMethodName, ActionType expectedType, Type expectedResultType)
         {
             IServiceProvider serviceProvider = Mock.Of<IServiceProvider>();
             Mock<IActionDelegateBuilder> actionDelegateBuilderMock = new Mock<IActionDelegateBuilder>(MockBehavior.Strict);
@@ -89,7 +89,6 @@ namespace MagisIT.ReactiveActions.Tests
             Assert.Equal(actionMethodName, action.Name);
             Assert.Equal(expectedType, action.Type);
             Assert.Equal(expectedResultType, action.ResultType);
-            Assert.Equal(expectedResultModelType, action.ResultModelType);
 
             // Doing it a second time should fail
             Assert.Throws<ArgumentException>(() => builder.AddAction<TestActions>(actionMethodName));

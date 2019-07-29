@@ -15,14 +15,15 @@ namespace MagisIT.ReactiveActions.Sample.ActionProviders
         [Action, ReactiveCollection]
         public Task<ICollection<ShoppingCartItem>> GetCartItemsAsync(IDataSource dataSource)
         {
-            ICollection<ShoppingCartItem> cartItems = TrackCollectionQuery(dataSource.ShoppingCartItems, nameof(ModelFilters.GetCartItemsFilter));
+            ICollection<ShoppingCartItem> cartItems = TrackCollectionQuery(true, dataSource.ShoppingCartItems, nameof(ModelFilters.GetCartItemsFilter));
             return Task.FromResult(cartItems);
         }
 
         [Action, Reactive]
         public Task<ShoppingCartItem> GetCartItemAsync(IDataSource dataSource, GetCartItemActionDescriptor actionDescriptor)
         {
-            ShoppingCartItem cartItem = TrackEntityQuery(dataSource.ShoppingCartItems.FirstOrDefault(i => i.ProductId == actionDescriptor.ProductId),
+            ShoppingCartItem cartItem = TrackEntityQuery(true,
+                                                         dataSource.ShoppingCartItems.FirstOrDefault(i => i.ProductId == actionDescriptor.ProductId),
                                                          nameof(ModelFilters.GetCartItemForProductIdFilter),
                                                          actionDescriptor.ProductId);
             return Task.FromResult(cartItem);
@@ -47,10 +48,7 @@ namespace MagisIT.ReactiveActions.Sample.ActionProviders
             }
             else
             {
-                item = new ShoppingCartItem {
-                    ProductId = product.Id,
-                    Amount = actionDescriptor.Amount
-                };
+                item = new ShoppingCartItem { ProductId = product.Id, Amount = actionDescriptor.Amount };
                 dataSource.ShoppingCartItems.Add(item);
                 await TrackEntityCreatedAsync(item).ConfigureAwait(false);
             }

@@ -15,14 +15,15 @@ namespace MagisIT.ReactiveActions.Sample.ActionProviders
         [Action, ReactiveCollection]
         public Task<ICollection<Product>> GetProductsAsync(IDataSource dataSource)
         {
-            ICollection<Product> products = TrackCollectionQuery(dataSource.Products, nameof(ModelFilters.GetProductsFilter));
+            ICollection<Product> products = TrackCollectionQuery(true, dataSource.Products, nameof(ModelFilters.GetProductsFilter));
             return Task.FromResult(products);
         }
 
         [Action, Reactive]
         public Task<Product> GetProductAsync(IDataSource dataSource, GetProductActionDescriptor actionDescriptor)
         {
-            Product product = TrackEntityQuery(dataSource.Products.FirstOrDefault(p => p.Id == actionDescriptor.Id),
+            Product product = TrackEntityQuery(true,
+                                               dataSource.Products.FirstOrDefault(p => p.Id == actionDescriptor.Id),
                                                nameof(ModelFilters.GetProductByIdFilter),
                                                actionDescriptor.Id);
             return Task.FromResult(product);
@@ -35,10 +36,7 @@ namespace MagisIT.ReactiveActions.Sample.ActionProviders
                 throw new InvalidOperationException("Product already exists.");
 
             var product = new Product {
-                Id = actionDescriptor.Id,
-                Name = actionDescriptor.Name,
-                Price = actionDescriptor.Price,
-                AvailableAmount = actionDescriptor.AvailableAmount
+                Id = actionDescriptor.Id, Name = actionDescriptor.Name, Price = actionDescriptor.Price, AvailableAmount = actionDescriptor.AvailableAmount
             };
 
             dataSource.Products.Add(product);

@@ -14,9 +14,9 @@ namespace MagisIT.ReactiveActions.Reactivity
 
         IList<IExecutionContext> SubContexts { get; }
 
-        IList<ParameterizedModelFilter> DataQueries { get; }
+        IList<(ParameterizedModelFilter filter, bool isResultSource)> DataQueries { get; }
 
-        void RegisterDataQuery(ModelFilter modelFilter, object[] filterParams);
+        void RegisterDataQuery(bool isResultSource, ModelFilter modelFilter, object[] filterParams);
 
         IExecutionContext CreateSubContext(Action action);
     }

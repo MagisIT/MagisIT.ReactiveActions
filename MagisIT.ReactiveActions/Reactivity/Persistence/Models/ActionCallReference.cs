@@ -6,13 +6,13 @@ namespace MagisIT.ReactiveActions.Reactivity.Persistence.Models
     {
         public string ActionCallId { get; set; }
 
-        public bool Direct { get; set; }
+        public bool IsResultSource { get; set; }
 
-        public bool Equals(ActionCallReference other) => other != null && ActionCallId == other.ActionCallId && Direct == other.Direct;
+        public bool Equals(ActionCallReference other) => other != null && ActionCallId == other.ActionCallId && IsResultSource == other.IsResultSource;
 
         public override bool Equals(object obj) => Equals(obj as ActionCallReference);
 
-        public override int GetHashCode() => (ActionCallId, Direct).GetHashCode();
+        public override int GetHashCode() => (ActionCallId, IsResultSource).GetHashCode();
 
         public static bool operator ==(ActionCallReference left, ActionCallReference right) => Equals(left, right);
 

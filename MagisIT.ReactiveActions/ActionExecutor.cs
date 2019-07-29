@@ -121,9 +121,9 @@ namespace MagisIT.ReactiveActions
                 IEnumerable<DataQuery> sessionQueries = sessionGroup;
 
                 // Merge List of affected action calls
-                // If action calls are affected more than once, favour the one that is indirect because indirect updates have a greater affect than direct updates.
+                // If action calls are affected more than once, favour the one that is not the result source because these updates have a greater affect.
                 IEnumerable<ActionCallReference> affectedActionCalls = sessionQueries.SelectMany(query => query.AffectedActionCalls).GroupBy(call => call.ActionCallId)
-                                                                                     .Select(grouping => grouping.OrderBy(entry => entry.Direct).First());
+                                                                                     .Select(grouping => grouping.OrderBy(entry => entry.IsResultSource).First());
 
                 // Notify update handlers of affected action calls
                 return Task.WhenAll(affectedActionCalls.Select(async reference => {
@@ -138,7 +138,7 @@ namespace MagisIT.ReactiveActions
                         return;
 
                     // Call update handlers
-                    if (action.IsReactiveCollection && reference.Direct && action.ResultModelType == typeof(TModel))
+                    if (action.IsReactiveCollection && reference.IsResultSource)
                     {
                         await Task.WhenAll(_actionResultUpdateHandlers.Select(
                                                handler => handler.HandleResultItemChangedAsync(trackingSession, action, actionCall.ActionDescriptor, oldModel, updatedModel)))
@@ -224,13 +224,13 @@ namespace MagisIT.ReactiveActions
             // Extract the data queries recursively from the execution contexts
             void VisitExecutionContext(IExecutionContext context)
             {
-                dataQueries.AddRange(context.DataQueries.Select(filter => new DataQuery {
+                dataQueries.AddRange(context.DataQueries.Select(query => new DataQuery {
                     TrackingSession = trackingSession,
-                    Id = filter.Identifier,
-                    ModelTypeName = filter.ModelFilter.ModelType.Name,
-                    FilterName = filter.ModelFilter.Name,
-                    FilterParams = filter.FilterParams,
-                    AffectedActionCalls = new[] { new ActionCallReference { ActionCallId = actionCall.Id, Direct = context == rootContext } }
+                    Id = query.filter.Identifier,
+                    ModelTypeName = query.filter.ModelFilter.ModelType.Name,
+                    FilterName = query.filter.ModelFilter.Name,
+                    FilterParams = query.filter.FilterParams,
+                    AffectedActionCalls = new[] { new ActionCallReference { ActionCallId = actionCall.Id, IsResultSource = query.isResultSource } }
                 }));
 
                 foreach (IExecutionContext subContext in context.SubContexts)
@@ -240,9 +240,9 @@ namespace MagisIT.ReactiveActions
             VisitExecutionContext(rootContext);
 
             // Merge data queries with similar ID
-            // If at least two data queries have the same ID. Favour the one that is indirect because indirect updates have a greater affect than direct updates.
+            // If at least two data queries have the same ID. Favour the one that is not the result source because these updates have a greater affect.
             DataQuery[] mergedDataQueries = dataQueries.GroupBy(dataQuery => dataQuery.Id)
-                                                       .Select(grouping => grouping.OrderBy(entry => entry.AffectedActionCalls.First().Direct).First()).ToArray();
+                                                       .Select(grouping => grouping.OrderBy(entry => entry.AffectedActionCalls.First().IsResultSource).First()).ToArray();
 
             return _trackingSessionStore.StoreTrackedActionCallAsync(trackingSession, actionCall, mergedDataQueries);
         }

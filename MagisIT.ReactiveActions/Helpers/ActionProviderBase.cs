@@ -27,7 +27,7 @@ namespace MagisIT.ReactiveActions.Helpers
             return ExecutionContext.ActionExecutor.InvokeSubActionAsync<TResult>(ExecutionContext, name, actionDescriptor, actionArguments);
         }
 
-        protected void TrackDataQuery<TModel>(string modelFilterName, params object[] filterParams) where TModel : class
+        protected void TrackDataQuery<TModel>(bool isResultSource, string modelFilterName, params object[] filterParams) where TModel : class
         {
             if (modelFilterName == null)
                 throw new ArgumentNullException(nameof(modelFilterName));
@@ -38,10 +38,10 @@ namespace MagisIT.ReactiveActions.Helpers
             ModelFilter modelFilter = ExecutionContext.ActionExecutor.GetModelFilter<TModel>(modelFilterName);
 
             // Register data query
-            ExecutionContext.RegisterDataQuery(modelFilter, filterParams);
+            ExecutionContext.RegisterDataQuery(isResultSource, modelFilter, filterParams);
         }
 
-        protected TModel TrackEntityQuery<TModel>(TModel queryResult, string modelFilterName, params object[] filterParams) where TModel : class
+        protected TModel TrackEntityQuery<TModel>(bool isResultSource, TModel queryResult, string modelFilterName, params object[] filterParams) where TModel : class
         {
             if (modelFilterName == null)
                 throw new ArgumentNullException(nameof(modelFilterName));
@@ -58,17 +58,17 @@ namespace MagisIT.ReactiveActions.Helpers
             if (queryResult != null)
             {
                 if (!modelFilter.Matches(queryResult, filterParams))
-                    throw new ArgumentException("Filter doesn't match query result and might be invalid. This check is only performed in debug mode.");
+                    throw new ArgumentException("Filter doesn't match query result and might be invalid. This check is performed in debug mode only.");
             }
 #endif
 
             // Register data query
-            ExecutionContext.RegisterDataQuery(modelFilter, filterParams);
+            ExecutionContext.RegisterDataQuery(isResultSource, modelFilter, filterParams);
 
             return queryResult;
         }
 
-        protected TCollection TrackCollectionQuery<TModel, TCollection>(TCollection queryResult, string modelFilterName, params object[] filterParams)
+        protected TCollection TrackCollectionQuery<TModel, TCollection>(bool isResultSource, TCollection queryResult, string modelFilterName, params object[] filterParams)
             where TModel : class where TCollection : ICollection<TModel>
         {
             if (queryResult == null)
@@ -81,21 +81,21 @@ namespace MagisIT.ReactiveActions.Helpers
             // Get filter
             ModelFilter modelFilter = ExecutionContext.ActionExecutor.GetModelFilter<TModel>(modelFilterName);
 
-            // Test if the filter matches all the results while in debug mode.
 #if DEBUG
+            // Test if the filter matches all the results while in debug mode.
             if (!queryResult.All(resultItem => modelFilter.Matches(resultItem, filterParams)))
-                throw new ArgumentException("Filter doesn't match all query results and might be invalid. This check is only performed in debug mode.");
-
+                throw new ArgumentException("Filter doesn't match all query results and might be invalid. This check is performed in debug mode only.");
 #endif
 
             // Register data query
-            ExecutionContext.RegisterDataQuery(modelFilter, filterParams);
+            ExecutionContext.RegisterDataQuery(isResultSource, modelFilter, filterParams);
 
             return queryResult;
         }
 
-        protected ICollection<TModel> TrackCollectionQuery<TModel>(ICollection<TModel> queryResult, string modelFilterName, params object[] filterParams) where TModel : class =>
-            TrackCollectionQuery<TModel, ICollection<TModel>>(queryResult, modelFilterName, filterParams);
+        protected ICollection<TModel> TrackCollectionQuery<TModel>(bool isResultSource, ICollection<TModel> queryResult, string modelFilterName, params object[] filterParams)
+            where TModel : class =>
+            TrackCollectionQuery<TModel, ICollection<TModel>>(isResultSource, queryResult, modelFilterName, filterParams);
 
         protected Task TrackModelUpdateAsync<TModel>(TModel updatedModel, TModel oldModel = null) where TModel : class =>
             ExecutionContext.ActionExecutor.PublishModelUpdateAsync(updatedModel, oldModel);
